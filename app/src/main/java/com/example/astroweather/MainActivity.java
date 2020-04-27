@@ -1,8 +1,9 @@
 package com.example.astroweather;
 
-import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
+import android.support.v4.app.FragmentActivity;
+import android.support.v4.view.ViewPager;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
@@ -11,7 +12,7 @@ import android.widget.TextClock;
 
 import java.util.TimeZone;
 
-public class MainActivity extends Activity {
+public class MainActivity extends FragmentActivity {
 
     private double latitude = 0;
     private double longitude = 0;
@@ -37,6 +38,9 @@ public class MainActivity extends Activity {
                 startActivity(myIntent);
             }
         });
+
+        ViewPager pager = findViewById(R.id.fragmentsPager);
+        pager.setAdapter(new ViewPagerAdapter(getSupportFragmentManager()));
     }
 
     @Override
