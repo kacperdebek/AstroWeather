@@ -11,6 +11,11 @@ import android.view.WindowManager;
 import android.widget.ImageView;
 import android.widget.TextClock;
 
+import com.astrocalculator.AstroCalculator;
+import com.astrocalculator.AstroDateTime;
+
+import java.util.Calendar;
+import java.util.Date;
 import java.util.TimeZone;
 
 public class MainActivity extends FragmentActivity {
@@ -19,6 +24,8 @@ public class MainActivity extends FragmentActivity {
     private float longitude = 0;
     private float frequency = 0;
     SharedPreferences pref;
+    AstroCalculator.SunInfo sunInfo;
+    AstroCalculator.MoonInfo moonInfo;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -47,6 +54,8 @@ public class MainActivity extends FragmentActivity {
         latitude = pref.getFloat("latitude", 0);
         longitude = pref.getFloat("longitude", 0);
         frequency = pref.getFloat("frequency", 0);
+
+        updateSunAndMoonInfo();
     }
 
     @Override
@@ -71,6 +80,7 @@ public class MainActivity extends FragmentActivity {
                 editor.putFloat("frequency", frequency);
             }
             editor.apply();
+            updateSunAndMoonInfo();
         }
     }
 
@@ -78,5 +88,23 @@ public class MainActivity extends FragmentActivity {
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
         setIntent(intent);
+    }
+
+    private AstroCalculator getAstroCalculator() {
+        Date now = new Date();
+        Calendar cal = Calendar.getInstance();
+        cal.setTime(now);
+        int offsetInHours = TimeZone.getDefault().getRawOffset() / 3600000;
+        boolean isDaylightSavings = TimeZone.getDefault().inDaylightTime(now);
+        AstroDateTime currentDate = new AstroDateTime(cal.get(Calendar.YEAR), cal.get(Calendar.MONTH)
+                , cal.get(Calendar.DAY_OF_MONTH), cal.get(Calendar.HOUR_OF_DAY), cal.get(Calendar.MINUTE)
+                , cal.get(Calendar.SECOND), offsetInHours, isDaylightSavings);
+        return new AstroCalculator(currentDate, new AstroCalculator.Location(this.latitude, this.longitude));
+    }
+
+    private void updateSunAndMoonInfo() {
+        AstroCalculator calculator = getAstroCalculator();
+        sunInfo = calculator.getSunInfo();
+        moonInfo = calculator.getMoonInfo();
     }
 }
