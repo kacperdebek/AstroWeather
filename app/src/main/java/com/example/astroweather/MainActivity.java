@@ -25,9 +25,9 @@ import tourguide.tourguide.TourGuide;
 
 public class MainActivity extends FragmentActivity {
 
-    private float latitude = 0;
-    private float longitude = 0;
-    private float frequency = 0;
+    private float latitude;
+    private float longitude;
+    private float frequency;
     SharedPreferences pref;
     AstroCalculator.SunInfo sunInfo;
     AstroCalculator.MoonInfo moonInfo;
@@ -97,7 +97,10 @@ public class MainActivity extends FragmentActivity {
                     .setToolTip(new ToolTip().setTitle("Before you start").setDescription("Click on this icon to set up your coordinates"))
                     .setOverlay(new Overlay())
                     .playOn(optionsIcon);
-
+            pager.setVisibility(View.INVISIBLE);
+        }
+        else{
+            pager.setVisibility(View.VISIBLE);
         }
     }
 

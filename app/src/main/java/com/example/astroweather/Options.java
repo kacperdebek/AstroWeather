@@ -87,6 +87,9 @@ public class Options extends Activity {
         });
 
         if (firstRun) {
+            latitude.setText("");
+            longitude.setText("");
+            frequency.setText("");
             guide = setUpTourGuide("Latitude", "Enter your current latitude here", latitude);
         }
     }
@@ -113,10 +116,10 @@ public class Options extends Activity {
                                 guide.cleanUp();
                                 guide = setUpTourGuide("Longtitude", "Now enter your longitude here", longitude);
                                 longitude.requestFocus();
-                                return true; // consume.
+                                return true;
                             }
                         }
-                        return false; // pass on to other listeners.
+                        return false;
                     }
                 }
         );
