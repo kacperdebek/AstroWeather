@@ -1,6 +1,7 @@
 package com.example.astroweather;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.view.ViewPager;
@@ -14,9 +15,10 @@ import java.util.TimeZone;
 
 public class MainActivity extends FragmentActivity {
 
-    private double latitude = 0;
-    private double longitude = 0;
-    private double frequency = 0;
+    private float latitude = 0;
+    private float longitude = 0;
+    private float frequency = 0;
+    SharedPreferences pref;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -41,6 +43,10 @@ public class MainActivity extends FragmentActivity {
 
         ViewPager pager = findViewById(R.id.fragmentsPager);
         pager.setAdapter(new ViewPagerAdapter(getSupportFragmentManager()));
+        pref = getApplicationContext().getSharedPreferences("MyPref", MODE_PRIVATE);
+        latitude = pref.getFloat("latitude", 0);
+        longitude = pref.getFloat("longitude", 0);
+        frequency = pref.getFloat("frequency", 0);
     }
 
     @Override
@@ -48,18 +54,23 @@ public class MainActivity extends FragmentActivity {
         super.onResume();
         Bundle extras = getIntent().getExtras();
         if (extras != null) {
+            SharedPreferences.Editor editor = pref.edit();
             String bundledLatitude = extras.getString("latitude");
             String bundledLongitude = extras.getString("longitude");
             String bundledFrequency = extras.getString("frequency");
             if (bundledLatitude != null) {
-                latitude = Double.parseDouble(bundledLatitude);
+                latitude = Float.parseFloat(bundledLatitude);
+                editor.putFloat("latitude", latitude);
             }
             if (bundledLongitude != null) {
-                longitude = Double.parseDouble(bundledLongitude);
+                longitude = Float.parseFloat(bundledLongitude);
+                editor.putFloat("longitude", longitude);
             }
             if (bundledFrequency != null) {
-                frequency = Double.parseDouble(bundledFrequency);
+                frequency = Float.parseFloat(bundledFrequency);
+                editor.putFloat("frequency", frequency);
             }
+            editor.apply();
         }
     }
 
