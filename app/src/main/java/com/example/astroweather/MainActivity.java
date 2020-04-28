@@ -96,7 +96,7 @@ public class MainActivity extends FragmentActivity {
         cal.setTime(now);
         int offsetInHours = TimeZone.getDefault().getRawOffset() / 3600000;
         boolean isDaylightSavings = TimeZone.getDefault().inDaylightTime(now);
-        AstroDateTime currentDate = new AstroDateTime(cal.get(Calendar.YEAR), cal.get(Calendar.MONTH)
+        AstroDateTime currentDate = new AstroDateTime(cal.get(Calendar.YEAR), cal.get(Calendar.MONTH) + 1
                 , cal.get(Calendar.DAY_OF_MONTH), cal.get(Calendar.HOUR_OF_DAY), cal.get(Calendar.MINUTE)
                 , cal.get(Calendar.SECOND), offsetInHours, isDaylightSavings);
         return new AstroCalculator(currentDate, new AstroCalculator.Location(this.latitude, this.longitude));

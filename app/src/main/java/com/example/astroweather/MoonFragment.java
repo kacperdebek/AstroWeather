@@ -38,7 +38,7 @@ public class MoonFragment extends Fragment {
         nextNewMoon.setText(nextNewMoonText);
 
         TextView illumination = view.findViewById(R.id.illumination);
-        String illuminationText = "Illumination %: " + activity.moonInfo.getIllumination();
+        String illuminationText = "Illumination %: " + activity.moonInfo.getIllumination()*100;
         illumination.setText(illuminationText);
 
         TextView moonAge = view.findViewById(R.id.moonage);
