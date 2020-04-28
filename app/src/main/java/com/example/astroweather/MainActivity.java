@@ -18,6 +18,11 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.TimeZone;
 
+import tourguide.tourguide.Overlay;
+import tourguide.tourguide.Pointer;
+import tourguide.tourguide.ToolTip;
+import tourguide.tourguide.TourGuide;
+
 public class MainActivity extends FragmentActivity {
 
     private float latitude = 0;
@@ -26,6 +31,9 @@ public class MainActivity extends FragmentActivity {
     SharedPreferences pref;
     AstroCalculator.SunInfo sunInfo;
     AstroCalculator.MoonInfo moonInfo;
+    ImageView optionsIcon;
+    ViewPager pager;
+    TourGuide guide;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -35,7 +43,7 @@ public class MainActivity extends FragmentActivity {
         setContentView(R.layout.activity_main);
         TextClock currentTime = findViewById(R.id.currentTime);
         currentTime.setTimeZone(TimeZone.getDefault().getID());
-        ImageView optionsIcon = findViewById(R.id.optionsIcon);
+        optionsIcon = findViewById(R.id.optionsIcon);
         optionsIcon.setOnClickListener(new View.OnClickListener() {
             public void onClick(View view) {
                 Intent myIntent = new Intent(view.getContext(), Options.class);
@@ -43,12 +51,13 @@ public class MainActivity extends FragmentActivity {
                 myIntent.putExtra("longitude", String.valueOf(longitude));
                 myIntent.putExtra("latitude", String.valueOf(latitude));
                 myIntent.putExtra("frequency", String.valueOf(frequency));
-
+                if (pref.getBoolean("firstrun", true)) {
+                    myIntent.putExtra("firstrun", true);
+                }
                 startActivity(myIntent);
             }
         });
-
-        ViewPager pager = findViewById(R.id.fragmentsPager);
+        pager = findViewById(R.id.fragmentsPager);
         pager.setAdapter(new ViewPagerAdapter(getSupportFragmentManager()));
         pref = getApplicationContext().getSharedPreferences("MyPref", MODE_PRIVATE);
         latitude = pref.getFloat("latitude", 0);
@@ -81,6 +90,14 @@ public class MainActivity extends FragmentActivity {
             }
             editor.apply();
             updateSunAndMoonInfo();
+        }
+        if (pref.getBoolean("firstrun", true)) {
+            guide = TourGuide.init(this).with(TourGuide.Technique.CLICK)
+                    .setPointer(new Pointer())
+                    .setToolTip(new ToolTip().setTitle("Before you start").setDescription("Click on this icon to set up your coordinates"))
+                    .setOverlay(new Overlay())
+                    .playOn(optionsIcon);
+
         }
     }
 
