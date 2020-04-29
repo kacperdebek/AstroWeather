@@ -8,6 +8,9 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
+import com.astrocalculator.AstroCalculator;
+import com.astrocalculator.AstroDateTime;
+
 public class MoonFragment extends Fragment {
 
     @Override
@@ -21,29 +24,33 @@ public class MoonFragment extends Fragment {
         MainActivity activity = (MainActivity) getActivity();
         View view = inflater.inflate(R.layout.fragment_moon, container, false);
 
-        TextView moonrise = view.findViewById(R.id.moonrise);
-        String moonriseText = "Moonrise: " + activity.moonInfo.getMoonrise().toString();
-        moonrise.setText(moonriseText);
+        AstroCalculator.MoonInfo moonInfo = activity.moonInfo;
 
-        TextView moonset = view.findViewById(R.id.moonset);
-        String moonsetText = "Moonset: " + activity.moonInfo.getMoonset().toString();
-        moonset.setText(moonsetText);
+        TextView moonriseField = view.findViewById(R.id.moonrise);
+        AstroDateTime moonrise = moonInfo.getMoonrise();
+        String moonriseText = moonrise != null ? "Moonrise: " + moonrise.toString() : "Moonrise: N/A";
+        moonriseField.setText(moonriseText);
 
-        TextView nextFullMoon = view.findViewById(R.id.nextfullmoon);
-        String nextFullMoonText = "Next full moon: " + activity.moonInfo.getNextFullMoon().toString();
-        nextFullMoon.setText(nextFullMoonText);
+        TextView moonsetField = view.findViewById(R.id.moonset);
+        AstroDateTime moonset = moonInfo.getMoonset();
+        String moonsetText = moonset != null ? "Moonset: " + moonset.toString() : "Moonset: N/A";
+        moonsetField.setText(moonsetText);
 
-        TextView nextNewMoon = view.findViewById(R.id.nextnewmoon);
-        String nextNewMoonText = "Next new moon: " + activity.moonInfo.getNextNewMoon().toString();
-        nextNewMoon.setText(nextNewMoonText);
+        TextView nextFullMoonField = view.findViewById(R.id.nextfullmoon);
+        String nextFullMoonText = "Next full moon: " + moonInfo.getNextFullMoon().toString();
+        nextFullMoonField.setText(nextFullMoonText);
 
-        TextView illumination = view.findViewById(R.id.illumination);
-        String illuminationText = "Illumination %: " + activity.moonInfo.getIllumination()*100;
-        illumination.setText(illuminationText);
+        TextView nextNewMoonField = view.findViewById(R.id.nextnewmoon);
+        String nextNewMoonText = "Next new moon: " + moonInfo.getNextNewMoon().toString();
+        nextNewMoonField.setText(nextNewMoonText);
 
-        TextView moonAge = view.findViewById(R.id.moonage);
-        String moonAgeText = "Moon age: " + activity.moonInfo.getAge();
-        moonAge.setText(moonAgeText);
+        TextView illuminationField = view.findViewById(R.id.illumination);
+        String illuminationText = "Illumination: " + Math.round(moonInfo.getIllumination()*100) + "%";
+        illuminationField.setText(illuminationText);
+
+        TextView moonAgeField = view.findViewById(R.id.moonage);
+        String moonAgeText = "Moon age: " + Math.round(moonInfo.getAge()) + " days";
+        moonAgeField.setText(moonAgeText);
 
         return view;
     }

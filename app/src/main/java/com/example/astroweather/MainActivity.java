@@ -101,8 +101,7 @@ public class MainActivity extends FragmentActivity {
                     .setOverlay(new Overlay())
                     .playOn(optionsIcon);
             pager.setVisibility(View.INVISIBLE);
-        }
-        else{
+        } else {
             pager.setVisibility(View.VISIBLE);
         }
     }
@@ -129,6 +128,5 @@ public class MainActivity extends FragmentActivity {
         AstroCalculator calculator = getAstroCalculator(timeZone);
         sunInfo = calculator.getSunInfo();
         moonInfo = calculator.getMoonInfo();
-
     }
 }
