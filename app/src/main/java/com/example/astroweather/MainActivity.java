@@ -38,46 +38,59 @@ public class MainActivity extends FragmentActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        //Make app fullscreen
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
         this.requestWindowFeature(Window.FEATURE_NO_TITLE);
+
         setContentView(R.layout.activity_main);
+
+        //Set up the main clock
         TextClock currentTime = findViewById(R.id.currentTime);
         currentTime.setTimeZone(TimeZone.getDefault().getID());
+
+        //Set up the settings button
         optionsIcon = findViewById(R.id.optionsIcon);
         optionsIcon.setOnClickListener(new View.OnClickListener() {
             public void onClick(View view) {
                 Intent myIntent = new Intent(view.getContext(), Options.class);
-
+                //Send current values to the options activity
                 myIntent.putExtra("longitude", String.valueOf(longitude));
                 myIntent.putExtra("latitude", String.valueOf(latitude));
                 myIntent.putExtra("frequency", String.valueOf(frequency));
+                //Inform options activity whether it's app's first launch
                 if (pref.getBoolean("firstrun", true)) {
                     myIntent.putExtra("firstrun", true);
                 }
+                //Proceed to options screen
                 startActivity(myIntent);
             }
         });
+        //Create swipable pager for fragments
         pager = findViewById(R.id.fragmentsPager);
         pager.setAdapter(new ViewPagerAdapter(getSupportFragmentManager()));
+        //Preferences containing user's saved settings
         pref = getApplicationContext().getSharedPreferences("MyPref", MODE_PRIVATE);
-
+        //Load saved settings if such exist
         latitude = pref.getFloat("latitude", 0);
         longitude = pref.getFloat("longitude", 0);
         frequency = pref.getFloat("frequency", 0);
-
-        String timeZone = TimezoneMapper.tzNameAt(latitude, longitude);
-        updateSunAndMoonInfo(TimeZone.getTimeZone(timeZone));
+        //Update sun and moon information
+        updateSunAndMoonInfo();
     }
 
     @Override
     protected void onResume() {
         super.onResume();
         Bundle extras = getIntent().getExtras();
+        //Check if there is content to access
         if (extras != null) {
+            //Prepare to edit saved settings
             SharedPreferences.Editor editor = pref.edit();
+            //Get newly inputted settings from options activity
             String bundledLatitude = extras.getString("latitude");
             String bundledLongitude = extras.getString("longitude");
             String bundledFrequency = extras.getString("frequency");
+            //If they exist replace current values and save them in preferences
             if (bundledLatitude != null) {
                 latitude = Float.parseFloat(bundledLatitude);
                 editor.putFloat("latitude", latitude);
@@ -90,18 +103,23 @@ public class MainActivity extends FragmentActivity {
                 frequency = Float.parseFloat(bundledFrequency);
                 editor.putFloat("frequency", frequency);
             }
+            //Apply changes
             editor.apply();
-            String timeZone = TimezoneMapper.tzNameAt(latitude, longitude);
-            updateSunAndMoonInfo(TimeZone.getTimeZone(timeZone));
+            //Update sun and moon information
+            updateSunAndMoonInfo();
         }
+        //Launch tutorial if it's users first app launch
         if (pref.getBoolean("firstrun", true)) {
+            //Set up tutorial pointing at options icon
             TourGuide.init(this).with(TourGuide.Technique.CLICK)
                     .setPointer(new Pointer())
                     .setToolTip(new ToolTip().setTitle("Before you start").setDescription("Click on this icon to set up your coordinates"))
                     .setOverlay(new Overlay())
                     .playOn(optionsIcon);
+            //Hide pager for the time being
             pager.setVisibility(View.INVISIBLE);
         } else {
+            //Users already done tutorial which means we can show pager now
             pager.setVisibility(View.VISIBLE);
         }
     }
@@ -113,19 +131,27 @@ public class MainActivity extends FragmentActivity {
     }
 
     private AstroCalculator getAstroCalculator(TimeZone timeZone) {
+        //Create date based on calculated timezone
         Date now = new Date();
         Calendar cal = Calendar.getInstance();
         cal.setTimeZone(timeZone);
+        //Calculate timezone offset in hours
         int offsetInHours = timeZone.getRawOffset() / 3600000;
+        //Determine whether the timezone falls under daylight savings
         boolean isDaylightSavings = timeZone.inDaylightTime(now);
+        //Create AstroDateTime based on above data
         AstroDateTime currentDate = new AstroDateTime(cal.get(Calendar.YEAR), cal.get(Calendar.MONTH) + 1
                 , cal.get(Calendar.DAY_OF_MONTH), cal.get(Calendar.HOUR_OF_DAY), cal.get(Calendar.MINUTE)
                 , cal.get(Calendar.SECOND), offsetInHours, isDaylightSavings);
         return new AstroCalculator(currentDate, new AstroCalculator.Location(this.latitude, this.longitude));
     }
 
-    private void updateSunAndMoonInfo(TimeZone timeZone) {
-        AstroCalculator calculator = getAstroCalculator(timeZone);
+    private void updateSunAndMoonInfo() {
+        //Calculate timezone based on user's inputted coordinates
+        String timeZone = TimezoneMapper.tzNameAt(latitude, longitude);
+        //Create AstroCalculator to calculate sun and moon information
+        AstroCalculator calculator = getAstroCalculator(TimeZone.getTimeZone(timeZone));
+        //Fetch sun and moon info
         sunInfo = calculator.getSunInfo();
         moonInfo = calculator.getMoonInfo();
     }

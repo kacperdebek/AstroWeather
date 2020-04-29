@@ -33,18 +33,24 @@ public class Options extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        //Make the view fullscreen
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
         this.requestWindowFeature(Window.FEATURE_NO_TITLE);
+
         setContentView(R.layout.activity_options);
 
-
+        //Set up variables from the xml
         latitude = findViewById(R.id.latitude);
         longitude = findViewById(R.id.longitude);
         frequency = findViewById(R.id.frequency);
+        //Configure the listeners
         setEditTextListeners();
+        //Initialize the boolean determining whether its users first app launch
         firstRun = false;
 
+
         Bundle extras = getIntent().getExtras();
+        //Get bundled data from main activity if it exists
         if (extras != null) {
             String bundledLatitude = extras.getString("latitude");
             String bundledLongitude = extras.getString("longitude");
@@ -61,11 +67,12 @@ public class Options extends Activity {
             }
             firstRun = isFirstRun;
         }
-
+        //Configure the save button
         save = findViewById(R.id.saveOptions);
         save.setOnClickListener(new View.OnClickListener() {
             public void onClick(View view) {
                 Intent i = new Intent(view.getContext(), MainActivity.class);
+                //Make sure the user is not trying to save empty values
                 if (!TextUtils.isEmpty(longitude.getText().toString())) {
                     i.putExtra("longitude", longitude.getText().toString());
                 }
@@ -76,21 +83,25 @@ public class Options extends Activity {
                     i.putExtra("frequency", frequency.getText().toString());
                 }
                 Context context = getApplicationContext();
+                //Inform the user about correct options saving
                 Toast.makeText(context, "New options saved", Toast.LENGTH_SHORT).show();
+                //Set the firstrun variable to false - during next app launches tutorial will be omitted
                 if (firstRun) {
                     SharedPreferences pref = getApplicationContext().getSharedPreferences("MyPref", MODE_PRIVATE);
-                    System.out.println("First time running the app no more");
                     pref.edit().putBoolean("firstrun", false).apply();
                     firstRun = false;
                 }
+                //Go back to main activity
                 startActivity(i);
             }
         });
 
         if (firstRun) {
+            //Set text fields as empty
             latitude.setText("");
             longitude.setText("");
             frequency.setText("");
+            //Begin the tutorial from the first text field
             guide = setUpTourGuide("Latitude", "Enter your current latitude here", latitude);
         }
     }
@@ -108,6 +119,7 @@ public class Options extends Activity {
                 new EditText.OnEditorActionListener() {
                     @Override
                     public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
+                        //If user clicks on 'next' button on keyboard then proceed with the tutorial and change text field focus to the next one
                         if (actionId == EditorInfo.IME_ACTION_SEARCH ||
                                 actionId == EditorInfo.IME_ACTION_NEXT ||
                                 event != null &&
@@ -128,6 +140,7 @@ public class Options extends Activity {
                 new EditText.OnEditorActionListener() {
                     @Override
                     public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
+                        //If user clicks on 'next' button on keyboard then proceed with the tutorial and change text field focus to the next one
                         if (actionId == EditorInfo.IME_ACTION_SEARCH ||
                                 actionId == EditorInfo.IME_ACTION_NEXT ||
                                 event != null &&
@@ -148,6 +161,7 @@ public class Options extends Activity {
                 new EditText.OnEditorActionListener() {
                     @Override
                     public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
+                        //If user clicks on 'enter' button on keyboard then proceed with the tutorial highlighting the save button and hiding the keyboard
                         if (actionId == EditorInfo.IME_ACTION_SEARCH ||
                                 actionId == EditorInfo.IME_ACTION_DONE ||
                                 event != null &&
