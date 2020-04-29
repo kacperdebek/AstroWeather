@@ -13,6 +13,7 @@ import android.widget.TextClock;
 
 import com.astrocalculator.AstroCalculator;
 import com.astrocalculator.AstroDateTime;
+import com.moodysalem.TimezoneMapper;
 
 import java.util.Calendar;
 import java.util.Date;
@@ -64,7 +65,8 @@ public class MainActivity extends FragmentActivity {
         longitude = pref.getFloat("longitude", 0);
         frequency = pref.getFloat("frequency", 0);
 
-        updateSunAndMoonInfo();
+        String timeZone = TimezoneMapper.tzNameAt(latitude, longitude);
+        updateSunAndMoonInfo(TimeZone.getTimeZone(timeZone));
     }
 
     @Override
@@ -89,7 +91,8 @@ public class MainActivity extends FragmentActivity {
                 editor.putFloat("frequency", frequency);
             }
             editor.apply();
-            updateSunAndMoonInfo();
+            String timeZone = TimezoneMapper.tzNameAt(latitude, longitude);
+            updateSunAndMoonInfo(TimeZone.getTimeZone(timeZone));
         }
         if (pref.getBoolean("firstrun", true)) {
             guide = TourGuide.init(this).with(TourGuide.Technique.CLICK)
@@ -110,21 +113,22 @@ public class MainActivity extends FragmentActivity {
         setIntent(intent);
     }
 
-    private AstroCalculator getAstroCalculator() {
+    private AstroCalculator getAstroCalculator(TimeZone timeZone) {
         Date now = new Date();
         Calendar cal = Calendar.getInstance();
-        cal.setTime(now);
-        int offsetInHours = TimeZone.getDefault().getRawOffset() / 3600000;
-        boolean isDaylightSavings = TimeZone.getDefault().inDaylightTime(now);
+        cal.setTimeZone(timeZone);
+        int offsetInHours = timeZone.getRawOffset() / 3600000;
+        boolean isDaylightSavings = timeZone.inDaylightTime(now);
         AstroDateTime currentDate = new AstroDateTime(cal.get(Calendar.YEAR), cal.get(Calendar.MONTH) + 1
                 , cal.get(Calendar.DAY_OF_MONTH), cal.get(Calendar.HOUR_OF_DAY), cal.get(Calendar.MINUTE)
                 , cal.get(Calendar.SECOND), offsetInHours, isDaylightSavings);
         return new AstroCalculator(currentDate, new AstroCalculator.Location(this.latitude, this.longitude));
     }
 
-    private void updateSunAndMoonInfo() {
-        AstroCalculator calculator = getAstroCalculator();
+    private void updateSunAndMoonInfo(TimeZone timeZone) {
+        AstroCalculator calculator = getAstroCalculator(timeZone);
         sunInfo = calculator.getSunInfo();
         moonInfo = calculator.getMoonInfo();
+
     }
 }

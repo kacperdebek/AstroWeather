@@ -35,4 +35,5 @@ dependencies {
     implementation('com.github.worker8:tourguide:1.0.19-SNAPSHOT@aar') {
         transitive true
     }
+    implementation 'com.moodysalem:LatLongToTimezoneMaven:1.2'
 }
