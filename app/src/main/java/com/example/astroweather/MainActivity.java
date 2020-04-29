@@ -61,6 +61,7 @@ public class MainActivity extends FragmentActivity {
         pager = findViewById(R.id.fragmentsPager);
         pager.setAdapter(new ViewPagerAdapter(getSupportFragmentManager()));
         pref = getApplicationContext().getSharedPreferences("MyPref", MODE_PRIVATE);
+
         latitude = pref.getFloat("latitude", 0);
         longitude = pref.getFloat("longitude", 0);
         frequency = pref.getFloat("frequency", 0);

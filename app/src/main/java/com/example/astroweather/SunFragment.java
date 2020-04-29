@@ -8,6 +8,8 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
+import com.astrocalculator.AstroCalculator;
+
 public class SunFragment extends Fragment {
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -20,29 +22,31 @@ public class SunFragment extends Fragment {
         MainActivity activity = (MainActivity) getActivity();
         View view = inflater.inflate(R.layout.fragment_sun, container, false);
 
-        TextView sunrise = view.findViewById(R.id.sunrise);
-        String sunriseText = "Sunrise: " + activity.sunInfo.getSunrise().toString();
-        sunrise.setText(sunriseText);
+        AstroCalculator.SunInfo sunInfo = activity.sunInfo;
 
-        TextView sunset = view.findViewById(R.id.sunset);
-        String sunsetText = "Sunset: " + activity.sunInfo.getSunset().toString();
-        sunset.setText(sunsetText);
+        TextView sunriseField = view.findViewById(R.id.sunrise);
+        String sunriseText = "Sunrise: " + sunInfo.getSunrise().toString();
+        sunriseField.setText(sunriseText);
 
-        TextView azimuthRise = view.findViewById(R.id.azimuthrise);
-        String azimuthRiseText = "Azimuth rise: " + activity.sunInfo.getAzimuthRise();
-        azimuthRise.setText(azimuthRiseText);
+        TextView sunsetField = view.findViewById(R.id.sunset);
+        String sunsetText = "Sunset: " + sunInfo.getSunset().toString();
+        sunsetField.setText(sunsetText);
 
-        TextView azimuthSet = view.findViewById(R.id.azimuthset);
-        String azimuthSetText = "Azimuth set: " + activity.sunInfo.getAzimuthSet();
-        azimuthSet.setText(azimuthSetText);
+        TextView azimuthRiseField = view.findViewById(R.id.azimuthrise);
+        String azimuthRiseText = !Double.isNaN(sunInfo.getAzimuthRise()) ? "Azimuth rise: " + sunInfo.getAzimuthRise() : "Azimuth rise: N/A";
+        azimuthRiseField.setText(azimuthRiseText);
 
-        TextView twilightMorning = view.findViewById(R.id.twilightmorning);
-        String twilightMorningText = "Twilight morning: " + activity.sunInfo.getTwilightMorning().toString();
-        twilightMorning.setText(twilightMorningText);
+        TextView azimuthSetField = view.findViewById(R.id.azimuthset);
+        String azimuthSetText = !Double.isNaN(sunInfo.getAzimuthSet()) ? "Azimuth set: " + sunInfo.getAzimuthSet() : "Azimuth set: N/A";
+        azimuthSetField.setText(azimuthSetText);
 
-        TextView twilightEvening = view.findViewById(R.id.twilightevening);
-        String twilightEveningText = "Twilight evening: " + activity.sunInfo.getTwilightEvening().toString();
-        twilightEvening.setText(twilightEveningText);
+        TextView twilightMorningField = view.findViewById(R.id.twilightmorning);
+        String twilightMorningText = "Twilight morning: " + sunInfo.getTwilightMorning().toString();
+        twilightMorningField.setText(twilightMorningText);
+
+        TextView twilightEveningField = view.findViewById(R.id.twilightevening);
+        String twilightEveningText = "Twilight evening: " + sunInfo.getTwilightEvening().toString();
+        twilightEveningField.setText(twilightEveningText);
 
         return view;
     }
