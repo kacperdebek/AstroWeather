@@ -81,6 +81,7 @@ public class Options extends Activity {
                     SharedPreferences pref = getApplicationContext().getSharedPreferences("MyPref", MODE_PRIVATE);
                     System.out.println("First time running the app no more");
                     pref.edit().putBoolean("firstrun", false).apply();
+                    firstRun = false;
                 }
                 startActivity(i);
             }
@@ -112,7 +113,7 @@ public class Options extends Activity {
                                 event != null &&
                                         event.getAction() == KeyEvent.ACTION_DOWN &&
                                         event.getKeyCode() == KeyEvent.KEYCODE_ENTER) {
-                            if (event == null || !event.isShiftPressed() && firstRun) {
+                            if ((event == null || !event.isShiftPressed()) && firstRun) {
                                 guide.cleanUp();
                                 guide = setUpTourGuide("Longtitude", "Now enter your longitude here", longitude);
                                 longitude.requestFocus();
@@ -132,7 +133,7 @@ public class Options extends Activity {
                                 event != null &&
                                         event.getAction() == KeyEvent.ACTION_DOWN &&
                                         event.getKeyCode() == KeyEvent.KEYCODE_ENTER) {
-                            if (event == null || !event.isShiftPressed() && firstRun) {
+                            if ((event == null || !event.isShiftPressed()) && firstRun) {
                                 guide.cleanUp();
                                 guide = setUpTourGuide("Frequency", "Now enter refreshing frequency", frequency);
                                 frequency.requestFocus();
@@ -152,7 +153,7 @@ public class Options extends Activity {
                                 event != null &&
                                         event.getAction() == KeyEvent.ACTION_DOWN &&
                                         (event.getKeyCode() == KeyEvent.KEYCODE_ENTER)) {
-                            if (event == null || !event.isShiftPressed() && firstRun) {
+                            if ((event == null || !event.isShiftPressed()) && firstRun) {
                                 guide.cleanUp();
                                 guide = setUpTourGuide(" ", " ", save);
                                 hideKeyboard();
