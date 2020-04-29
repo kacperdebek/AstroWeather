@@ -29,12 +29,11 @@ public class MainActivity extends FragmentActivity {
     private float latitude;
     private float longitude;
     private float frequency;
-    SharedPreferences pref;
-    AstroCalculator.SunInfo sunInfo;
-    AstroCalculator.MoonInfo moonInfo;
-    ImageView optionsIcon;
-    ViewPager pager;
-    TourGuide guide;
+    private SharedPreferences pref;
+    public AstroCalculator.SunInfo sunInfo;
+    public AstroCalculator.MoonInfo moonInfo;
+    private ImageView optionsIcon;
+    private ViewPager pager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -96,7 +95,7 @@ public class MainActivity extends FragmentActivity {
             updateSunAndMoonInfo(TimeZone.getTimeZone(timeZone));
         }
         if (pref.getBoolean("firstrun", true)) {
-            guide = TourGuide.init(this).with(TourGuide.Technique.CLICK)
+            TourGuide.init(this).with(TourGuide.Technique.CLICK)
                     .setPointer(new Pointer())
                     .setToolTip(new ToolTip().setTitle("Before you start").setDescription("Click on this icon to set up your coordinates"))
                     .setOverlay(new Overlay())
