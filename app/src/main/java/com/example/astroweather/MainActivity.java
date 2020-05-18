@@ -3,6 +3,7 @@ package com.example.astroweather;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.os.Handler;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.view.ViewPager;
 import android.view.View;
@@ -10,6 +11,7 @@ import android.view.Window;
 import android.view.WindowManager;
 import android.widget.ImageView;
 import android.widget.TextClock;
+import android.widget.Toast;
 
 import com.astrocalculator.AstroCalculator;
 import com.astrocalculator.AstroDateTime;
@@ -34,7 +36,9 @@ public class MainActivity extends FragmentActivity {
     public AstroCalculator.MoonInfo moonInfo;
     private ImageView optionsIcon;
     private ViewPager pager;
-
+    Handler handler = new Handler();
+    Runnable runnable;
+    int delay = 1000 * 10;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -105,6 +109,7 @@ public class MainActivity extends FragmentActivity {
             editor.apply();
             //Update sun and moon information
             updateSunAndMoonInfo();
+            handleRefreshingFragments();
         }
         //Launch tutorial if it's users first app launch
         if (pref.getBoolean("firstrun", true)) {
@@ -120,6 +125,12 @@ public class MainActivity extends FragmentActivity {
             //Users already done tutorial which means we can show pager now
             pager.setVisibility(View.VISIBLE);
         }
+    }
+
+    @Override
+    protected void onPause() {
+        handler.removeCallbacks(runnable);
+        super.onPause();
     }
 
     @Override
@@ -152,5 +163,30 @@ public class MainActivity extends FragmentActivity {
         //Fetch sun and moon info
         sunInfo = calculator.getSunInfo();
         moonInfo = calculator.getMoonInfo();
+    }
+    private void handleRefreshingFragments(){
+        //set the right refreshing delay as set in options
+        switch(frequencySelection){
+            case 0:
+                delay = 1000 * 10;
+                break;
+            case 1:
+                delay = 1000 * 60 * 10;
+                break;
+            case 2:
+                delay = 1000 * 60 * 15;
+                break;
+            case 3:
+                delay = 1000 * 60 * 20;
+                break;
+        }
+        //refresh the fragments
+        handler.postDelayed( runnable = new Runnable() {
+            public void run() {
+                pager.setAdapter(new ViewPagerAdapter(getSupportFragmentManager()));
+                handler.postDelayed(runnable, delay);
+                Toast.makeText(getApplicationContext(), "Fragments updated", Toast.LENGTH_SHORT).show();
+            }
+        }, delay);
     }
 }
