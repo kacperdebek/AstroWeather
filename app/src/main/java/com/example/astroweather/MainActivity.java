@@ -28,7 +28,7 @@ public class MainActivity extends FragmentActivity {
 
     private float latitude;
     private float longitude;
-    private float frequency;
+    private int frequencySelection;
     private SharedPreferences pref;
     public AstroCalculator.SunInfo sunInfo;
     public AstroCalculator.MoonInfo moonInfo;
@@ -56,7 +56,7 @@ public class MainActivity extends FragmentActivity {
                 //Send current values to the options activity
                 myIntent.putExtra("longitude", String.valueOf(longitude));
                 myIntent.putExtra("latitude", String.valueOf(latitude));
-                myIntent.putExtra("frequency", String.valueOf(frequency));
+                myIntent.putExtra("frequency", frequencySelection);
                 //Inform options activity whether it's app's first launch
                 if (pref.getBoolean("firstrun", true)) {
                     myIntent.putExtra("firstrun", true);
@@ -73,7 +73,7 @@ public class MainActivity extends FragmentActivity {
         //Load saved settings if such exist
         latitude = pref.getFloat("latitude", 0);
         longitude = pref.getFloat("longitude", 0);
-        frequency = pref.getFloat("frequency", 0);
+        frequencySelection = pref.getInt("frequency", 0);
         //Update sun and moon information
         updateSunAndMoonInfo();
     }
@@ -89,7 +89,7 @@ public class MainActivity extends FragmentActivity {
             //Get newly inputted settings from options activity
             String bundledLatitude = extras.getString("latitude");
             String bundledLongitude = extras.getString("longitude");
-            String bundledFrequency = extras.getString("frequency");
+            int bundledFrequency = extras.getInt("frequency");
             //If they exist replace current values and save them in preferences
             if (bundledLatitude != null) {
                 latitude = Float.parseFloat(bundledLatitude);
@@ -99,10 +99,8 @@ public class MainActivity extends FragmentActivity {
                 longitude = Float.parseFloat(bundledLongitude);
                 editor.putFloat("longitude", longitude);
             }
-            if (bundledFrequency != null) {
-                frequency = Float.parseFloat(bundledFrequency);
-                editor.putFloat("frequency", frequency);
-            }
+            frequencySelection = bundledFrequency;
+            editor.putInt("frequency", frequencySelection);
             //Apply changes
             editor.apply();
             //Update sun and moon information
