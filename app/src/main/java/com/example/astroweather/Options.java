@@ -31,7 +31,7 @@ import tourguide.tourguide.TourGuide;
 public class Options extends Activity implements AdapterView.OnItemSelectedListener {
     EditText longitude;
     EditText latitude;
-    Spinner frequency;
+    CustomSpinner frequency;
     Button save;
     TourGuide guide;
     int frequencyChoice = 0;
@@ -50,7 +50,6 @@ public class Options extends Activity implements AdapterView.OnItemSelectedListe
         latitude = findViewById(R.id.latitude);
         longitude = findViewById(R.id.longitude);
         frequency = findViewById(R.id.frequency);
-        frequency.setOnItemSelectedListener(this);
 
         //Setup the spinner options
         List<String> availableFrequencies = new ArrayList<>();
@@ -65,6 +64,11 @@ public class Options extends Activity implements AdapterView.OnItemSelectedListe
 
         // set adapter to the spinner
         frequency.setAdapter(dataAdapter);
+        //prevent setOnItemSelectedListener from invoking onItemSelected
+        frequency.setSelection(0,false);
+        frequency.setOnItemSelectedEvenIfUnchangedListener(this);
+
+
 
         //Configure the listeners
         setEditTextListeners();
@@ -139,9 +143,10 @@ public class Options extends Activity implements AdapterView.OnItemSelectedListe
                 new EditText.OnEditorActionListener() {
                     @Override
                     public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
-                        //If user clicks on 'next' button on keyboard then proceed with the tutorial and change text field focus to the next one
+                        //If user clicks on 'next' or 'done' button on keyboard then proceed with the tutorial and change text field focus to the next one
                         if (actionId == EditorInfo.IME_ACTION_SEARCH ||
                                 actionId == EditorInfo.IME_ACTION_NEXT ||
+                                actionId == EditorInfo.IME_ACTION_DONE ||
                                 event != null &&
                                         event.getAction() == KeyEvent.ACTION_DOWN &&
                                         event.getKeyCode() == KeyEvent.KEYCODE_ENTER) {
@@ -160,15 +165,17 @@ public class Options extends Activity implements AdapterView.OnItemSelectedListe
                 new EditText.OnEditorActionListener() {
                     @Override
                     public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
-                        //If user clicks on 'next' button on keyboard then proceed with the tutorial and change text field focus to the next one
+                        //If user clicks on 'next' or 'done' button on keyboard then proceed with the tutorial and change text field focus to the next one
                         if (actionId == EditorInfo.IME_ACTION_SEARCH ||
                                 actionId == EditorInfo.IME_ACTION_NEXT ||
+                                actionId == EditorInfo.IME_ACTION_DONE ||
                                 event != null &&
                                         event.getAction() == KeyEvent.ACTION_DOWN &&
                                         event.getKeyCode() == KeyEvent.KEYCODE_ENTER) {
                             if ((event == null || !event.isShiftPressed()) && firstRun) {
                                 guide.cleanUp();
                                 guide = setUpTourGuide("Frequency", "Now enter refreshing frequency", frequency);
+                                hideKeyboard();
                                 frequency.requestFocus();
                                 return true;
                             }
@@ -194,7 +201,6 @@ public class Options extends Activity implements AdapterView.OnItemSelectedListe
         if(firstRun) {
             guide.cleanUp();
             guide = setUpTourGuide(" ", " ", save);
-            hideKeyboard();
         }
         frequencyChoice = position;
     }
