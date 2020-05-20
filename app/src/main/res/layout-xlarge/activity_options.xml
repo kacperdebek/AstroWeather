@@ -11,14 +11,14 @@
         android:layout_height="38dp"
         android:text="@string/absolute_location"
         android:textSize="25sp"
-        app:layout_constraintBottom_toTopOf="@+id/latitudetext"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.08" />
 
     <EditText
-        android:imeOptions="flagNoExtractUi"
         android:id="@+id/latitude"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
@@ -44,7 +44,6 @@
         app:layout_constraintVertical_bias="0.424" />
 
     <EditText
-        android:imeOptions="flagNoExtractUi"
         android:id="@+id/longitude"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
