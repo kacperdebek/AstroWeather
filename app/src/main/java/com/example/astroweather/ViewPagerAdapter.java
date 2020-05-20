@@ -6,8 +6,10 @@ import android.support.v4.app.FragmentPagerAdapter;
 
 public class ViewPagerAdapter extends FragmentPagerAdapter {
 
-    ViewPagerAdapter(FragmentManager fm) {
+    private int simultaneousPages;
+    ViewPagerAdapter(FragmentManager fm, int simultaneousPages) {
         super(fm);
+        this.simultaneousPages = simultaneousPages;
     }
 
     @Override
@@ -24,5 +26,10 @@ public class ViewPagerAdapter extends FragmentPagerAdapter {
     @Override
     public int getCount() {
         return 2;
+    }
+
+    @Override
+    public float getPageWidth(int position) {
+        return(1f/simultaneousPages);
     }
 }

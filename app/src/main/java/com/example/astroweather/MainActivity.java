@@ -2,6 +2,7 @@ package com.example.astroweather;
 
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.res.Configuration;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.v4.app.FragmentActivity;
@@ -39,6 +40,8 @@ public class MainActivity extends FragmentActivity {
     Handler handler = new Handler();
     Runnable runnable;
     int delay = 1000 * 10;
+    public int simultaneousPages;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -69,9 +72,12 @@ public class MainActivity extends FragmentActivity {
                 startActivity(myIntent);
             }
         });
+        simultaneousPages = getResources().getConfiguration().isLayoutSizeAtLeast(Configuration.SCREENLAYOUT_SIZE_XLARGE) ? 2 : 1;
         //Create swipable pager for fragments
         pager = findViewById(R.id.fragmentsPager);
-        pager.setAdapter(new ViewPagerAdapter(getSupportFragmentManager()));
+        pager.setAdapter(new ViewPagerAdapter(getSupportFragmentManager(), simultaneousPages));
+
+        pager.setOffscreenPageLimit(2 * simultaneousPages);
         //Preferences containing user's saved settings
         pref = getApplicationContext().getSharedPreferences("MyPref", MODE_PRIVATE);
         //Load saved settings if such exist
@@ -164,9 +170,10 @@ public class MainActivity extends FragmentActivity {
         sunInfo = calculator.getSunInfo();
         moonInfo = calculator.getMoonInfo();
     }
-    private void handleRefreshingFragments(){
+
+    private void handleRefreshingFragments() {
         //set the right refreshing delay as set in options
-        switch(frequencySelection){
+        switch (frequencySelection) {
             case 0:
                 delay = 1000 * 10;
                 break;
@@ -181,9 +188,9 @@ public class MainActivity extends FragmentActivity {
                 break;
         }
         //refresh the fragments
-        handler.postDelayed( runnable = new Runnable() {
+        handler.postDelayed(runnable = new Runnable() {
             public void run() {
-                pager.setAdapter(new ViewPagerAdapter(getSupportFragmentManager()));
+                pager.setAdapter(new ViewPagerAdapter(getSupportFragmentManager(), simultaneousPages));
                 handler.postDelayed(runnable, delay);
                 Toast.makeText(getApplicationContext(), "Fragments updated", Toast.LENGTH_SHORT).show();
             }
