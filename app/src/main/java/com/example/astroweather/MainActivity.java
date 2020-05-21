@@ -12,6 +12,7 @@ import android.view.Window;
 import android.view.WindowManager;
 import android.widget.ImageView;
 import android.widget.TextClock;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.astrocalculator.AstroCalculator;
@@ -41,6 +42,7 @@ public class MainActivity extends FragmentActivity {
     Runnable runnable;
     int delay = 1000 * 10;
     public int simultaneousPages;
+    private TextView coordinates;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -53,6 +55,8 @@ public class MainActivity extends FragmentActivity {
         //Set up the main clock
         TextClock currentTime = findViewById(R.id.currentTime);
         currentTime.setTimeZone(TimeZone.getDefault().getID());
+
+        coordinates = findViewById(R.id.coordinates);
 
         //Set up the settings button
         optionsIcon = findViewById(R.id.optionsIcon);
@@ -85,6 +89,9 @@ public class MainActivity extends FragmentActivity {
         frequencySelection = pref.getInt("frequency", 0);
         //Update sun and moon information
         updateSunAndMoonInfo();
+
+        String coords = "Latitude: " + this.latitude + "  |  Longitude: " + this.longitude;
+        coordinates.setText(coords);
     }
 
     @Override
@@ -115,6 +122,9 @@ public class MainActivity extends FragmentActivity {
             //Update sun and moon information
             updateSunAndMoonInfo();
             handleRefreshingFragments();
+
+            String coords = "Latitude: " + this.latitude + "  |  Longitude: " + this.longitude;
+            coordinates.setText(coords);
         }
         //Launch tutorial if it's users first app launch
         if (pref.getBoolean("firstrun", true)) {

@@ -7,6 +7,7 @@
 
     <TextView
         android:id="@+id/absolutelocation"
+        android:textAlignment="center"
         android:layout_width="0dp"
         android:layout_height="38dp"
         android:text="@string/absolute_location"
@@ -31,6 +32,7 @@
 
     <TextView
         android:id="@+id/datarefreshingfrequency"
+        android:textAlignment="center"
         android:layout_width="0dp"
         android:layout_height="38dp"
         android:text="@string/data_refreshing_frequency"
