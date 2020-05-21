@@ -27,37 +27,48 @@ public class SunFragment extends Fragment {
 
         //Set up information about the sunrise onscreen
         TextView sunriseField = view.findViewById(R.id.sunrise);
-        String sunriseText = "Sunrise: " + sunInfo.getSunrise().toString();
+        String srHour = fillText(sunInfo.getSunrise().getHour());
+        String srMinute = fillText(sunInfo.getSunrise().getMinute());
+        String sunriseText = "Sunrise: " + srHour + ":" + srMinute;
         sunriseField.setText(sunriseText);
 
         //Set up information about the sunset onscreen
         TextView sunsetField = view.findViewById(R.id.sunset);
-        String sunsetText = "Sunset: " + sunInfo.getSunset().toString();
+        String ssHour = fillText(sunInfo.getSunset().getHour());
+        String ssMinute = fillText(sunInfo.getSunset().getMinute());
+        String sunsetText = "Sunset: " + ssHour + ":" + ssMinute;
         sunsetField.setText(sunsetText);
 
         //Set up information about the sun's azimuth rise onscreen
         TextView azimuthRiseField = view.findViewById(R.id.azimuthrise);
         //If coordinates make it impossible for azimuth to exist display N/A
-        String azimuthRiseText = !Double.isNaN(sunInfo.getAzimuthRise()) ? "Azimuth rise: " + sunInfo.getAzimuthRise() : "Azimuth rise: N/A";
+        String azimuthRiseText = !Double.isNaN(sunInfo.getAzimuthRise()) ? "Azimuth rise: " + Math.floor(sunInfo.getAzimuthRise() * 100) / 100 + "°" : "Azimuth rise: N/A";
         azimuthRiseField.setText(azimuthRiseText);
 
         //Set up information about the sun's azimuth set onscreen
         TextView azimuthSetField = view.findViewById(R.id.azimuthset);
         //If coordinates make it impossible for azimuth to exist display N/A
-        String azimuthSetText = !Double.isNaN(sunInfo.getAzimuthSet()) ? "Azimuth set: " + sunInfo.getAzimuthSet() : "Azimuth set: N/A";
+        String azimuthSetText = !Double.isNaN(sunInfo.getAzimuthSet()) ? "Azimuth set: " + Math.floor(sunInfo.getAzimuthSet() * 100) / 100 + "°" : "Azimuth set: N/A";
         azimuthSetField.setText(azimuthSetText);
 
         //Set up information about the twilight morning onscreen
         TextView twilightMorningField = view.findViewById(R.id.twilightmorning);
-        String twilightMorningText = "Twilight morning: " + sunInfo.getTwilightMorning().toString();
+        String tmHour = fillText(sunInfo.getTwilightMorning().getHour());
+        String tmMinute = fillText(sunInfo.getTwilightMorning().getMinute());
+        String twilightMorningText = "Twilight morning: " + tmHour + ":" + tmMinute;
         twilightMorningField.setText(twilightMorningText);
 
         //Set up information about the twilight evening onscreen
         TextView twilightEveningField = view.findViewById(R.id.twilightevening);
-        String twilightEveningText = "Twilight evening: " + sunInfo.getTwilightEvening().toString();
+        String teHour = fillText(sunInfo.getTwilightEvening().getHour());
+        String teMinute = fillText(sunInfo.getTwilightEvening().getMinute());
+        String twilightEveningText = "Twilight evening: " + teHour + ":" + teMinute;
         twilightEveningField.setText(twilightEveningText);
 
         return view;
     }
 
+    private String fillText(int i) {
+        return i > 9 ? i + "" : "0" + i;
+    }
 }

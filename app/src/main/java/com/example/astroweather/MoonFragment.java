@@ -29,25 +29,39 @@ public class MoonFragment extends Fragment {
         //Set up the moonrise information onscreen
         TextView moonriseField = view.findViewById(R.id.moonrise);
         AstroDateTime moonrise = moonInfo.getMoonrise();
+        String mrHour = fillText(moonInfo.getMoonrise().getHour());
+        String mrMinute = fillText(moonInfo.getMoonrise().getMinute());
         //If moonrise can't exist within given coordinates display N/A
-        String moonriseText = moonrise != null ? "Moonrise: " + moonrise.toString() : "Moonrise: N/A";
+        String moonriseText = moonrise != null ? "Moonrise: " + mrHour + ":" + mrMinute : "Moonrise: N/A";
         moonriseField.setText(moonriseText);
 
         //Set up the moonset information onscreen
         TextView moonsetField = view.findViewById(R.id.moonset);
         AstroDateTime moonset = moonInfo.getMoonset();
+        String msHour = fillText(moonInfo.getMoonset().getHour());
+        String msMinute = fillText(moonInfo.getMoonset().getMinute());
         //If moonset can't exist within given coordinates display N/A
-        String moonsetText = moonset != null ? "Moonset: " + moonset.toString() : "Moonset: N/A";
+        String moonsetText = moonset != null ? "Moonset: " + msHour + ":" + msMinute : "Moonset: N/A";
         moonsetField.setText(moonsetText);
 
         //Set up the information about next full moon onscreen
         TextView nextFullMoonField = view.findViewById(R.id.nextfullmoon);
-        String nextFullMoonText = "Next full moon: " + moonInfo.getNextFullMoon().toString();
+        String fmHour = fillText(moonInfo.getNextFullMoon().getHour());
+        String fmMinute = fillText(moonInfo.getNextFullMoon().getMinute());
+        String nextFullMoonText = "Next full moon: " + fmHour + ":" + fmMinute + " "
+                + fillText(moonInfo.getNextFullMoon().getDay()) + "-"
+                + fillText(moonInfo.getNextFullMoon().getMonth()) + "-"
+                + fillText(moonInfo.getNextFullMoon().getYear());
         nextFullMoonField.setText(nextFullMoonText);
 
         //Set up the information about next new moon onscreen
         TextView nextNewMoonField = view.findViewById(R.id.nextnewmoon);
-        String nextNewMoonText = "Next new moon: " + moonInfo.getNextNewMoon().toString();
+        String nmHour = fillText(moonInfo.getNextNewMoon().getHour());
+        String nmMinute = fillText(moonInfo.getNextNewMoon().getMinute());
+        String nextNewMoonText = "Next new moon: " + nmHour + ":" + nmMinute + " "
+                + fillText(moonInfo.getNextNewMoon().getDay()) + "-"
+                + fillText(moonInfo.getNextNewMoon().getMonth()) + "-"
+                + fillText(moonInfo.getNextNewMoon().getYear());
         nextNewMoonField.setText(nextNewMoonText);
 
         //Set up the information about the moon's illumination percentage onscreen
@@ -62,5 +76,7 @@ public class MoonFragment extends Fragment {
 
         return view;
     }
-
+    private String fillText(int i){
+        return i>9?i+"":"0"+i;
+    }
 }

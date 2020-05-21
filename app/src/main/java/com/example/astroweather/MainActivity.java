@@ -50,7 +50,6 @@ public class MainActivity extends FragmentActivity {
         this.requestWindowFeature(Window.FEATURE_NO_TITLE);
 
         setContentView(R.layout.activity_main);
-
         //Set up the main clock
         TextClock currentTime = findViewById(R.id.currentTime);
         currentTime.setTimeZone(TimeZone.getDefault().getID());
