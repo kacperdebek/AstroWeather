@@ -43,6 +43,7 @@ public class MainActivity extends FragmentActivity {
     int delay = 1000 * 10;
     public int simultaneousPages;
     private TextView coordinates;
+    boolean doubleBackToExitPressedOnce = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -199,10 +200,28 @@ public class MainActivity extends FragmentActivity {
         //refresh the fragments
         handler.postDelayed(runnable = new Runnable() {
             public void run() {
+                int position = pager.getCurrentItem();
                 pager.setAdapter(new ViewPagerAdapter(getSupportFragmentManager(), simultaneousPages));
+                pager.setCurrentItem(position);
                 handler.postDelayed(runnable, delay);
                 Toast.makeText(getApplicationContext(), "Fragments updated", Toast.LENGTH_SHORT).show();
             }
         }, delay);
+    }
+    @Override
+    public void onBackPressed() {
+        if (doubleBackToExitPressedOnce) {
+            finishAndRemoveTask();
+            return;
+        }
+        this.doubleBackToExitPressedOnce = true;
+        Toast.makeText(this, "Please click BACK again to exit", Toast.LENGTH_SHORT).show();
+
+        new Handler().postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                doubleBackToExitPressedOnce=false;
+            }
+        }, 2000);
     }
 }
