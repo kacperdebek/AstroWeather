@@ -19,13 +19,19 @@ public class ViewPagerAdapter extends FragmentPagerAdapter {
                 return new SunFragment();
             case 1:
                 return new MoonFragment();
+            case 2:
+                return new MainWeatherFragment();
+            case 3:
+                return new AdditionalWeatherFragment();
+            case 4:
+                return new FutureForecastFragment();
         }
         return null;
     }
 
     @Override
     public int getCount() {
-        return 2;
+        return 5;
     }
 
     @Override

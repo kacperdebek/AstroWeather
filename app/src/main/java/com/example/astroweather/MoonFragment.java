@@ -66,7 +66,7 @@ public class MoonFragment extends Fragment {
 
         //Set up the information about the moon's illumination percentage onscreen
         TextView illuminationField = view.findViewById(R.id.illumination);
-        String illuminationText = "Illumination: " + Math.round(moonInfo.getIllumination()*100) + "%";
+        String illuminationText = "Illumination: " + Math.floor(((moonInfo.getIllumination()*100))*10)/10 + "%";
         illuminationField.setText(illuminationText);
 
         //Set up the information about the moon's age onscreen
