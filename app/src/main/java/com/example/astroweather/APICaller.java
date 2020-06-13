@@ -8,6 +8,7 @@ import org.json.JSONObject;
 
 import java.io.IOException;
 
+import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
@@ -18,11 +19,20 @@ public class APICaller {
     private TextView textView;
     private Response response = null;
 
-    public void callApi(TextView textView) throws Exception {
+    public void callApi(TextView textView, String cityName) throws Exception {
         client = new OkHttpClient();
         this.textView = textView;
+        HttpUrl httpUrl = new HttpUrl.Builder()
+                .scheme("https")
+                .host("api.openweathermap.org")
+                .addPathSegment("data")
+                .addPathSegment("2.5")
+                .addPathSegment("weather")
+                .addQueryParameter("q", cityName)
+                .addQueryParameter("appid", "77540b5cd880c96ba142a09ec6717938")
+                .build();
         request = new Request.Builder()
-                .url("https://api.openweathermap.org/data/2.5/weather?q=London&appid=77540b5cd880c96ba142a09ec6717938")
+                .url(httpUrl)
                 .get()
                 .build();
         new ExecuteCallTask().execute();
