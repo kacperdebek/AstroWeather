@@ -3,11 +3,12 @@ package com.example.astroweather;
 import android.annotation.SuppressLint;
 import android.os.Bundle;
 import android.os.Parcel;
-import android.support.annotation.NonNull;
-import android.support.v4.app.Fragment;
+import androidx.annotation.NonNull;
+import androidx.fragment.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.arlib.floatingsearchview.FloatingSearchView;
@@ -35,6 +36,7 @@ public class MainWeatherFragment extends Fragment {
         TextView weather = view.findViewById(R.id.weatherDescription);
         TextView pressure = view.findViewById(R.id.pressure);
         TextView temperature = view.findViewById(R.id.temperature);
+        ImageView image = view.findViewById(R.id.weatherIcon);
 
         FloatingSearchView floatingSearchView = view.findViewById(R.id.floating_search_view);
         List<SearchSuggestion> newSuggestions = new ArrayList<>();
@@ -52,7 +54,7 @@ public class MainWeatherFragment extends Fragment {
             public void onSearchAction(String currentQuery) {
                 newSuggestions.add(new Suggestions(currentQuery));
                 try {
-                    apiCaller.callApi(weather, pressure, temperature, currentQuery);
+                    apiCaller.callApi(weather, pressure, temperature, currentQuery, image, getContext());
                 } catch (Exception e) {
                     e.printStackTrace();
                 }

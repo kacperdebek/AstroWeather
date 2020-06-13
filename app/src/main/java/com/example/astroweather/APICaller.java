@@ -1,7 +1,12 @@
 package com.example.astroweather;
 
+import android.content.Context;
 import android.os.AsyncTask;
+import android.view.View;
+import android.widget.ImageView;
 import android.widget.TextView;
+
+import com.squareup.picasso.Picasso;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -21,13 +26,19 @@ public class APICaller {
     private TextView pressure;
     private TextView temperature;
     private Response response = null;
+    private View view;
+    private Context context;
+    private ImageView imageView;
 
-    public void callApi(TextView weather, TextView pressure, TextView temperature, String cityName) throws Exception {
+    public void callApi(TextView weather, TextView pressure, TextView temperature, String cityName, ImageView imageView, Context context) throws Exception {
         client = new OkHttpClient();
 
         this.weather = weather;
         this.pressure = pressure;
         this.temperature = temperature;
+        this.view = view;
+        this.context = context;
+        this.imageView = imageView;
 
         HttpUrl httpUrl = new HttpUrl.Builder()
                 .scheme("https")
@@ -66,6 +77,8 @@ public class APICaller {
                     JSONObject jsonResponse = new JSONObject(resStr);
                     JSONArray weatherArray = jsonResponse.getJSONArray("weather");
                     JSONObject detailsArray = jsonResponse.getJSONObject("main");
+                    Picasso.get().setLoggingEnabled(true);
+                    Picasso.get().load("http://openweathermap.org/img/wn/" + weatherArray.getJSONObject(0).getString("icon") + "@2x.png").into(imageView);
                     weather.setText("Weather: " + weatherArray.getJSONObject(0).getString("description"));
                     pressure.setText("Pressure: " + detailsArray.getString("pressure") + " hPa");
                     temperature.setText("Temperature: " + detailsArray.getString("temp") + "°C");

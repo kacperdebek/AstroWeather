@@ -4,7 +4,7 @@ import android.content.Context;
 import android.util.AttributeSet;
 import android.widget.AdapterView;
 
-public class CustomSpinner extends android.support.v7.widget.AppCompatSpinner {
+public class CustomSpinner extends androidx.appcompat.widget.AppCompatSpinner {
     AdapterView.OnItemSelectedListener listener;
 
     public CustomSpinner(Context context, AttributeSet attrs) {
