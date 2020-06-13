@@ -38,4 +38,9 @@ public class ViewPagerAdapter extends FragmentPagerAdapter {
     public float getPageWidth(int position) {
         return(1f/simultaneousPages);
     }
+
+    public String getFragmentTag(int pos){
+        return "android:switcher:"+R.id.fragmentsPager+":"+pos;
+    }
+
 }
