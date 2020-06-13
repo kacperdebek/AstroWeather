@@ -3,6 +3,7 @@ package com.example.astroweather;
 import android.os.AsyncTask;
 import android.widget.TextView;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -16,12 +17,18 @@ import okhttp3.Response;
 public class APICaller {
     private OkHttpClient client;
     private Request request;
-    private TextView textView;
+    private TextView weather;
+    private TextView pressure;
+    private TextView temperature;
     private Response response = null;
 
-    public void callApi(TextView textView, String cityName) throws Exception {
+    public void callApi(TextView weather, TextView pressure, TextView temperature, String cityName) throws Exception {
         client = new OkHttpClient();
-        this.textView = textView;
+
+        this.weather = weather;
+        this.pressure = pressure;
+        this.temperature = temperature;
+
         HttpUrl httpUrl = new HttpUrl.Builder()
                 .scheme("https")
                 .host("api.openweathermap.org")
@@ -30,6 +37,7 @@ public class APICaller {
                 .addPathSegment("weather")
                 .addQueryParameter("q", cityName)
                 .addQueryParameter("appid", "77540b5cd880c96ba142a09ec6717938")
+                .addQueryParameter("units", "metric") //TODO: units as parameter
                 .build();
         request = new Request.Builder()
                 .url(httpUrl)
@@ -56,7 +64,11 @@ public class APICaller {
                 try {
                     resStr = response.body().string();
                     JSONObject jsonResponse = new JSONObject(resStr);
-                    textView.setText(jsonResponse.toString());
+                    JSONArray weatherArray = jsonResponse.getJSONArray("weather");
+                    JSONObject detailsArray = jsonResponse.getJSONObject("main");
+                    weather.setText("Weather: " + weatherArray.getJSONObject(0).getString("description"));
+                    pressure.setText("Pressure: " + detailsArray.getString("pressure") + " hPa");
+                    temperature.setText("Temperature: " + detailsArray.getString("temp") + "°C");
                 } catch (IOException | JSONException e) {
                     e.printStackTrace();
                 }

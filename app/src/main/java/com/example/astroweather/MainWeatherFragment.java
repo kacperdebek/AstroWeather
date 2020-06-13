@@ -20,6 +20,7 @@ public class MainWeatherFragment extends Fragment {
 
     private View view;
     private APICaller apiCaller = new APICaller();
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -30,7 +31,11 @@ public class MainWeatherFragment extends Fragment {
                              Bundle savedInstanceState) {
 
         view = inflater.inflate(R.layout.fragment_mainweather, container, false);
-        TextView weather = view.findViewById(R.id.textView);
+
+        TextView weather = view.findViewById(R.id.weatherDescription);
+        TextView pressure = view.findViewById(R.id.pressure);
+        TextView temperature = view.findViewById(R.id.temperature);
+
         FloatingSearchView floatingSearchView = view.findViewById(R.id.floating_search_view);
         List<SearchSuggestion> newSuggestions = new ArrayList<>();
 
@@ -47,7 +52,7 @@ public class MainWeatherFragment extends Fragment {
             public void onSearchAction(String currentQuery) {
                 newSuggestions.add(new Suggestions(currentQuery));
                 try {
-                    apiCaller.callApi(weather, currentQuery);
+                    apiCaller.callApi(weather, pressure, temperature, currentQuery);
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
