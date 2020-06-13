@@ -54,7 +54,7 @@ public class MainWeatherFragment extends Fragment {
             public void onSearchAction(String currentQuery) {
                 newSuggestions.add(new Suggestions(currentQuery));
                 try {
-                    apiCaller.callApi(weather, pressure, temperature, currentQuery, image, getContext());
+                    apiCaller.callApi(weather, pressure, temperature, currentQuery, image);
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
