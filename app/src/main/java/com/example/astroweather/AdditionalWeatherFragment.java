@@ -1,5 +1,6 @@
 package com.example.astroweather;
 
+import android.annotation.SuppressLint;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -37,32 +38,21 @@ public class AdditionalWeatherFragment extends Fragment {
 
         return view;
     }
+
     @Override
     public void onStop() {
         super.onStop();
         EventBus.getDefault().unregister(this);
     }
+
+    @SuppressLint("SetTextI18n")
     @Subscribe(threadMode = ThreadMode.MAIN)
-    public void onMessageEvent(ApiRespondedEvent event){
-        windSpeed.setText(event.windSpeed);
-        windDirection.setText(event.windDirection);
-        visibility.setText(event.visibility);
-        humidity.setText(event.humidity);
+    public void onMessageEvent(ApiRespondedEvent event) {
+        if (!event.isForecast) {
+            windSpeed.setText("Wind Speed: " + event.windSpeed + "m/s");
+            windDirection.setText("Wind direction: " + event.windDirection + "°");
+            visibility.setText("Visibility: " + event.visibility + "m");
+            humidity.setText("Humidity: " + event.humidity + "%");
+        }
     }
-    public TextView getWindDirection() {
-        return windDirection;
-    }
-
-    public TextView getWindSpeed() {
-        return windSpeed;
-    }
-
-    public TextView getVisibility() {
-        return visibility;
-    }
-
-    public TextView getHumidity() {
-        return humidity;
-    }
-
 }

@@ -24,7 +24,7 @@ public class ViewPagerAdapter extends FragmentPagerAdapter {
             case 3:
                 return new AdditionalWeatherFragment();
             case 4:
-                return new FutureForecastFragment();
+                return new ForecastFragment();
         }
         return null;
     }

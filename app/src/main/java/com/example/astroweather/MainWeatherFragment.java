@@ -4,13 +4,14 @@ import android.annotation.SuppressLint;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Parcel;
-import androidx.annotation.NonNull;
-import androidx.fragment.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
+
+import androidx.annotation.NonNull;
+import androidx.fragment.app.Fragment;
 
 import com.arlib.floatingsearchview.FloatingSearchView;
 import com.arlib.floatingsearchview.suggestions.model.SearchSuggestion;
@@ -23,7 +24,9 @@ import org.json.JSONObject;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
@@ -112,40 +115,35 @@ public class MainWeatherFragment extends Fragment {
         }
         return result;
     }
-    private void sendMessage(String windDirection, String windSpeed, String humidity, String visibility){
+
+    private void sendMessage(String windDirection, String windSpeed, String humidity, String visibility) {
         EventBus.getDefault().post(new ApiRespondedEvent(windDirection, windSpeed, humidity, visibility));
     }
+
+    private void sendForecast(Map<Integer, ArrayList<String>> forecasts) {
+        EventBus.getDefault().post(new ApiRespondedEvent(forecasts));
+    }
+
     private class APICaller {
         private OkHttpClient client;
-        private Request request;
-        private Response response = null;
+        private Request todayWeatherRequest;
+        private Request weatherForecastRequest;
+        private Response todayWeatherResponse = null;
+        private Response weatherForecastResponse = null;
 
         public void callApi(String cityName) throws Exception {
             client = new OkHttpClient();
-
-            HttpUrl httpUrl = new HttpUrl.Builder()
-                    .scheme("https")
-                    .host("api.openweathermap.org")
-                    .addPathSegment("data")
-                    .addPathSegment("2.5")
-                    .addPathSegment("weather")
-                    .addQueryParameter("q", cityName)
-                    .addQueryParameter("appid", "77540b5cd880c96ba142a09ec6717938")
-                    .addQueryParameter("units", "metric") //TODO: units as parameter
-                    .build();
-            request = new Request.Builder()
-                    .url(httpUrl)
-                    .get()
-                    .build();
+            todayWeatherRequest = createRequest(cityName, "weather");
+            weatherForecastRequest = createRequest(cityName, "forecast");
             new ExecuteCallTask().execute();
+            new ExecuteForecastCallTask().execute();
         }
 
         class ExecuteCallTask extends AsyncTask<String, Void, Void> {
-
-
             protected Void doInBackground(String... urls) {
                 try {
-                    response = client.newCall(request).execute();
+                    todayWeatherResponse = client.newCall(todayWeatherRequest).execute();
+
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
@@ -154,21 +152,20 @@ public class MainWeatherFragment extends Fragment {
 
             @SuppressLint("SetTextI18n")
             protected void onPostExecute(Void param) {
-                if (response != null) {
-                    String resStr = null;
+                if (todayWeatherResponse != null) {
                     try {
-                        resStr = response.body().string();
-                        JSONObject jsonResponse = new JSONObject(resStr);
-                        JSONArray weatherArray = jsonResponse.getJSONArray("weather");
-                        JSONObject detailsObject = jsonResponse.getJSONObject("main");
-                        JSONObject windObject = jsonResponse.getJSONObject("wind");
-                        int vis = jsonResponse.getInt("visibility");
+                        JSONObject todayResponse = new JSONObject(todayWeatherResponse.body().string());
+                        JSONArray weatherArray = todayResponse.getJSONArray("weather");
+                        JSONObject detailsObject = todayResponse.getJSONObject("main");
+                        JSONObject windObject = todayResponse.getJSONObject("wind");
+                        int vis = todayResponse.getInt("visibility");
 
                         Picasso.get().load("http://openweathermap.org/img/wn/" + weatherArray.getJSONObject(0).getString("icon") + "@2x.png").into(imageView);
 
                         weather.setText("Weather: " + weatherArray.getJSONObject(0).getString("description"));
                         pressure.setText("Pressure: " + detailsObject.getString("pressure") + " hPa");
                         temperature.setText("Temperature: " + detailsObject.getString("temp") + "°C");
+
                         sendMessage(windObject.getString("deg"), windObject.getString("speed"), detailsObject.getString("humidity"), Integer.toString(vis));
                     } catch (IOException | JSONException e) {
                         e.printStackTrace();
@@ -179,5 +176,62 @@ public class MainWeatherFragment extends Fragment {
                 }
             }
         }
+
+        class ExecuteForecastCallTask extends AsyncTask<String, Void, Void> {
+            JSONObject forecastResponse;
+
+            @Override
+            protected Void doInBackground(String... strings) {
+                try {
+                    weatherForecastResponse = client.newCall(weatherForecastRequest).execute();
+                    forecastResponse = new JSONObject(weatherForecastResponse.body().string());
+                } catch (IOException | JSONException e) {
+                    e.printStackTrace();
+                }
+                return null;
+            }
+
+            @SuppressLint("SetTextI18n")
+            protected void onPostExecute(Void param) {
+                if (weatherForecastResponse != null) {
+                    try {
+
+                        JSONArray forecastList = forecastResponse.getJSONArray("list");
+                        Map<Integer, ArrayList<String>> forecasts = new HashMap<>();
+                        for (int i = 0, j = 0; i < forecastList.length(); i++) {
+                            if (i % 8 == 0) {
+                                ArrayList<String> details = new ArrayList<>();
+                                details.add(forecastList.getJSONObject(i).getJSONObject("main").getString("temp"));
+                                details.add(forecastList.getJSONObject(i).getJSONArray("weather").getJSONObject(0).getString("icon"));
+                                System.out.println("I was here" + i);
+                                forecasts.put(j++, details);
+                            }
+                        }
+                        sendForecast(forecasts);
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
+                }
+
+            }
+        }
+
+        private Request createRequest(String cityName, String requestType) {
+            HttpUrl httpUrl = new HttpUrl.Builder()
+                    .scheme("https")
+                    .host("api.openweathermap.org")
+                    .addPathSegment("data")
+                    .addPathSegment("2.5")
+                    .addPathSegment(requestType)
+                    .addQueryParameter("q", cityName)
+                    .addQueryParameter("appid", "77540b5cd880c96ba142a09ec6717938")
+                    .addQueryParameter("units", "metric") //TODO: units as parameter
+                    .build();
+            return new Request.Builder()
+                    .url(httpUrl)
+                    .get()
+                    .build();
+        }
     }
+
 }
