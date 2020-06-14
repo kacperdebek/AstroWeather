@@ -203,7 +203,7 @@ public class MainWeatherFragment extends Fragment {
                                 ArrayList<String> details = new ArrayList<>();
                                 details.add(forecastList.getJSONObject(i).getJSONObject("main").getString("temp"));
                                 details.add(forecastList.getJSONObject(i).getJSONArray("weather").getJSONObject(0).getString("icon"));
-                                System.out.println("I was here" + i);
+                                details.add(forecastList.getJSONObject(i).getString("dt"));
                                 forecasts.put(j++, details);
                             }
                         }
