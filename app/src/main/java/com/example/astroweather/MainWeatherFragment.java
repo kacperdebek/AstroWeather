@@ -9,6 +9,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
@@ -168,7 +169,8 @@ public class MainWeatherFragment extends Fragment {
 
                         sendMessage(windObject.getString("deg"), windObject.getString("speed"), detailsObject.getString("humidity"), Integer.toString(vis));
                     } catch (IOException | JSONException e) {
-                        e.printStackTrace();
+                        //e.printStackTrace();
+                        Toast.makeText(getContext(), "Invalid location", Toast.LENGTH_SHORT).show();
                     }
 
                 } else {

@@ -49,10 +49,10 @@ public class AdditionalWeatherFragment extends Fragment {
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void onMessageEvent(ApiRespondedEvent event) {
         if (!event.isForecast) {
-            windSpeed.setText("Wind Speed: " + event.windSpeed + "m/s");
-            windDirection.setText("Wind direction: " + event.windDirection + "°");
-            visibility.setText("Visibility: " + event.visibility + "m");
-            humidity.setText("Humidity: " + event.humidity + "%");
+            windSpeed.setText("Wind Speed:\n" + event.windSpeed + "m/s");
+            windDirection.setText("Wind direction:\n" + event.windDirection + "°");
+            visibility.setText("Visibility:\n" + event.visibility + "m");
+            humidity.setText("Humidity:\n" + event.humidity + "%");
         }
     }
 }
