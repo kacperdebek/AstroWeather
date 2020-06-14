@@ -6,4 +6,5 @@
     <string name="save">Save</string>
     <string name="longitude">longitude</string>
     <string name="search_hint">Type a city name...</string>
+    <string name="units_for_data_displaying">Units for data displaying</string>
 </resources>

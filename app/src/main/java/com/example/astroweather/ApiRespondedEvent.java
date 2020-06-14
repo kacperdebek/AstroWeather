@@ -9,7 +9,9 @@ public class ApiRespondedEvent {
     public String humidity;
     public String visibility;
     public boolean isForecast;
+
     public Map<Integer, ArrayList<String>> forecasts;
+    public String units;
     public ApiRespondedEvent(String windDirection, String windSpeed, String humidity, String visibility) {
         this.windSpeed = windSpeed;
         this.windDirection = windDirection;
@@ -17,8 +19,9 @@ public class ApiRespondedEvent {
         this.visibility = visibility;
         this.isForecast = false;
     }
-    public ApiRespondedEvent(Map<Integer, ArrayList<String>> forecasts) {
+    public ApiRespondedEvent(Map<Integer, ArrayList<String>> forecasts, String units) {
         this.forecasts = forecasts;
+        this.units = units;
         this.isForecast = true;
     }
 }

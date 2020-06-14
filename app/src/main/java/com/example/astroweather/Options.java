@@ -28,13 +28,15 @@ import tourguide.tourguide.Pointer;
 import tourguide.tourguide.ToolTip;
 import tourguide.tourguide.TourGuide;
 
-public class Options extends Activity implements AdapterView.OnItemSelectedListener {
+public class Options extends Activity {
     EditText longitude;
     EditText latitude;
     CustomSpinner frequency;
+    CustomSpinner units;
     Button save;
     TourGuide guide;
     int frequencyChoice = 0;
+    int unitsChoice = 0;
     boolean firstRun;
 
     @Override
@@ -50,6 +52,7 @@ public class Options extends Activity implements AdapterView.OnItemSelectedListe
         latitude = findViewById(R.id.latitude);
         longitude = findViewById(R.id.longitude);
         frequency = findViewById(R.id.frequency);
+        units = findViewById(R.id.units);
 
         //Setup the spinner options
         List<String> availableFrequencies = new ArrayList<>();
@@ -66,9 +69,47 @@ public class Options extends Activity implements AdapterView.OnItemSelectedListe
         frequency.setAdapter(dataAdapter);
         //prevent setOnItemSelectedListener from invoking onItemSelected
         frequency.setSelection(0,false);
-        frequency.setOnItemSelectedEvenIfUnchangedListener(this);
+        frequency.setOnItemSelectedEvenIfUnchangedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                // On selecting a spinner item
+                //if its first run then continue with the tutorial
+                if(firstRun) {
+                    guide.cleanUp();
+                    guide = setUpTourGuide(" ", " ", save);
+                }
+                frequencyChoice = position;
+            }
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
 
+            }
+        });
 
+        //Setup the spinner options
+        List<String> availableUnits = new ArrayList<>();
+        availableUnits.add("Celsius");
+        availableUnits.add("Fahrenheit");
+        availableUnits.add("Kelvin");
+
+        //create spinner adapter
+        ArrayAdapter<String> unitsAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, availableUnits);
+        unitsAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+
+        // set adapter to the spinner
+        units.setAdapter(unitsAdapter);
+        //prevent setOnItemSelectedListener from invoking onItemSelected
+        units.setSelection(0,false);
+        units.setOnItemSelectedEvenIfUnchangedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                unitsChoice = position;
+            }
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+
+            }
+        });
 
         //Configure the listeners
         setEditTextListeners();
@@ -82,6 +123,7 @@ public class Options extends Activity implements AdapterView.OnItemSelectedListe
             String bundledLatitude = extras.getString("latitude");
             String bundledLongitude = extras.getString("longitude");
             int bundledFrequency = extras.getInt("frequency");
+            int bundledUnits = extras.getInt("units");
             boolean isFirstRun = extras.getBoolean("firstrun");
             if (bundledLatitude != null) {
                 latitude.setText(bundledLatitude);
@@ -90,7 +132,9 @@ public class Options extends Activity implements AdapterView.OnItemSelectedListe
                 longitude.setText(bundledLongitude);
             }
             frequencyChoice = bundledFrequency;
+            unitsChoice = bundledUnits;
             frequency.setSelection(frequencyChoice);
+            units.setSelection(unitsChoice);
             firstRun = isFirstRun;
         }
         //Configure the save button
@@ -106,6 +150,7 @@ public class Options extends Activity implements AdapterView.OnItemSelectedListe
                     i.putExtra("latitude", latitude.getText().toString());
                 }
                 i.putExtra("frequency", frequencyChoice);
+                i.putExtra("units", unitsChoice);
                 Context context = getApplicationContext();
                 //Inform the user about correct options saving
                 Toast.makeText(context, "New options saved", Toast.LENGTH_SHORT).show();
@@ -192,21 +237,5 @@ public class Options extends Activity implements AdapterView.OnItemSelectedListe
             InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
             imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
         }
-    }
-
-    @Override
-    public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-        // On selecting a spinner item
-        //if its first run then continue with the tutorial
-        if(firstRun) {
-            guide.cleanUp();
-            guide = setUpTourGuide(" ", " ", save);
-        }
-        frequencyChoice = position;
-    }
-
-    @Override
-    public void onNothingSelected(AdapterView<?> parent) {
-
     }
 }

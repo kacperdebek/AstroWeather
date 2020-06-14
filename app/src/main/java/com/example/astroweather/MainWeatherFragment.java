@@ -42,6 +42,7 @@ public class MainWeatherFragment extends Fragment {
     TextView pressure;
     TextView temperature;
     ImageView imageView;
+    String units;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -58,7 +59,7 @@ public class MainWeatherFragment extends Fragment {
         pressure = view.findViewById(R.id.pressure);
         temperature = view.findViewById(R.id.temperature);
         imageView = view.findViewById(R.id.weatherIcon);
-
+        determineUsedUnits();
         FloatingSearchView floatingSearchView = view.findViewById(R.id.floating_search_view);
         List<SearchSuggestion> newSuggestions = new ArrayList<>();
         floatingSearchView.setOnQueryChangeListener((oldQuery, newQuery) -> {
@@ -74,7 +75,7 @@ public class MainWeatherFragment extends Fragment {
             public void onSearchAction(String currentQuery) {
                 newSuggestions.add(new Suggestions(currentQuery));
                 try {
-                    apiCaller.callApi(currentQuery);
+                    apiCaller.callApi(currentQuery, units);
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -83,7 +84,20 @@ public class MainWeatherFragment extends Fragment {
 
         return view;
     }
-
+    private void determineUsedUnits(){
+        MainActivity activity = (MainActivity) getActivity();
+        switch(activity.unitsSelection){
+            case 0:
+                units = "metric";
+                break;
+            case 1:
+                units = "imperial";
+                break;
+            case 2:
+                units = "standard";
+                break;
+        }
+    }
     @SuppressLint("ParcelCreator")
     private static class Suggestions implements SearchSuggestion {
         private String name;
@@ -121,8 +135,8 @@ public class MainWeatherFragment extends Fragment {
         EventBus.getDefault().post(new ApiRespondedEvent(windDirection, windSpeed, humidity, visibility));
     }
 
-    private void sendForecast(Map<Integer, ArrayList<String>> forecasts) {
-        EventBus.getDefault().post(new ApiRespondedEvent(forecasts));
+    private void sendForecast(Map<Integer, ArrayList<String>> forecasts, String units) {
+        EventBus.getDefault().post(new ApiRespondedEvent(forecasts, units));
     }
 
     private class APICaller {
@@ -132,10 +146,10 @@ public class MainWeatherFragment extends Fragment {
         private Response todayWeatherResponse = null;
         private Response weatherForecastResponse = null;
 
-        public void callApi(String cityName) throws Exception {
+        public void callApi(String cityName, String units) throws Exception {
             client = new OkHttpClient();
-            todayWeatherRequest = createRequest(cityName, "weather");
-            weatherForecastRequest = createRequest(cityName, "forecast");
+            todayWeatherRequest = createRequest(cityName, "weather", units);
+            weatherForecastRequest = createRequest(cityName, "forecast", units);
             new ExecuteCallTask().execute();
             new ExecuteForecastCallTask().execute();
         }
@@ -165,7 +179,7 @@ public class MainWeatherFragment extends Fragment {
 
                         weather.setText("Weather: " + weatherArray.getJSONObject(0).getString("description"));
                         pressure.setText("Pressure: " + detailsObject.getString("pressure") + " hPa");
-                        temperature.setText("Temperature: " + detailsObject.getString("temp") + "°C");
+                        temperature.setText("Temperature: " + detailsObject.getString("temp") + generateTemperatureSymbol(units));
 
                         sendMessage(windObject.getString("deg"), windObject.getString("speed"), detailsObject.getString("humidity"), Integer.toString(vis));
                     } catch (IOException | JSONException e) {
@@ -209,7 +223,7 @@ public class MainWeatherFragment extends Fragment {
                                 forecasts.put(j++, details);
                             }
                         }
-                        sendForecast(forecasts);
+                        sendForecast(forecasts, generateTemperatureSymbol(units));
                     } catch (JSONException e) {
                         e.printStackTrace();
                     }
@@ -218,7 +232,7 @@ public class MainWeatherFragment extends Fragment {
             }
         }
 
-        private Request createRequest(String cityName, String requestType) {
+        private Request createRequest(String cityName, String requestType, String units) {
             HttpUrl httpUrl = new HttpUrl.Builder()
                     .scheme("https")
                     .host("api.openweathermap.org")
@@ -227,12 +241,24 @@ public class MainWeatherFragment extends Fragment {
                     .addPathSegment(requestType)
                     .addQueryParameter("q", cityName)
                     .addQueryParameter("appid", "77540b5cd880c96ba142a09ec6717938")
-                    .addQueryParameter("units", "metric") //TODO: units as parameter
+                    .addQueryParameter("units", units)
                     .build();
             return new Request.Builder()
                     .url(httpUrl)
                     .get()
                     .build();
+        }
+        private String generateTemperatureSymbol(String unit){
+            switch(unit){
+                case "metric":
+                    return "°C";
+                case "imperial":
+                    return "°F";
+                case "standard":
+                    return "°K";
+                default:
+                    return " ";
+            }
         }
     }
 

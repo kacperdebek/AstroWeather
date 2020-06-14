@@ -33,6 +33,7 @@ public class MainActivity extends FragmentActivity {
     private float latitude;
     private float longitude;
     private int frequencySelection;
+    public int unitsSelection;
     private SharedPreferences pref;
     public AstroCalculator.SunInfo sunInfo;
     public AstroCalculator.MoonInfo moonInfo;
@@ -68,6 +69,7 @@ public class MainActivity extends FragmentActivity {
                 myIntent.putExtra("longitude", String.valueOf(longitude));
                 myIntent.putExtra("latitude", String.valueOf(latitude));
                 myIntent.putExtra("frequency", frequencySelection);
+                myIntent.putExtra("units", unitsSelection);
                 //Inform options activity whether it's app's first launch
                 if (pref.getBoolean("firstrun", true)) {
                     myIntent.putExtra("firstrun", true);
@@ -81,13 +83,14 @@ public class MainActivity extends FragmentActivity {
         pager = findViewById(R.id.fragmentsPager);
         pager.setAdapter(new ViewPagerAdapter(getSupportFragmentManager(), simultaneousPages));
 
-        pager.setOffscreenPageLimit(2 * simultaneousPages);
+        pager.setOffscreenPageLimit(4);
         //Preferences containing user's saved settings
         pref = getApplicationContext().getSharedPreferences("MyPref", MODE_PRIVATE);
         //Load saved settings if such exist
         latitude = pref.getFloat("latitude", 0);
         longitude = pref.getFloat("longitude", 0);
         frequencySelection = pref.getInt("frequency", 0);
+        unitsSelection = pref.getInt("units", 0);
         //Update sun and moon information
         updateSunAndMoonInfo();
 
@@ -107,6 +110,7 @@ public class MainActivity extends FragmentActivity {
             String bundledLatitude = extras.getString("latitude");
             String bundledLongitude = extras.getString("longitude");
             int bundledFrequency = extras.getInt("frequency");
+            int bundledUnits = extras.getInt("units");
             //If they exist replace current values and save them in preferences
             if (bundledLatitude != null) {
                 latitude = Float.parseFloat(bundledLatitude);
@@ -117,7 +121,9 @@ public class MainActivity extends FragmentActivity {
                 editor.putFloat("longitude", longitude);
             }
             frequencySelection = bundledFrequency;
+            unitsSelection = bundledUnits;
             editor.putInt("frequency", frequencySelection);
+            editor.putInt("units", unitsSelection);
             //Apply changes
             editor.apply();
             //Update sun and moon information

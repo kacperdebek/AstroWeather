@@ -70,11 +70,11 @@ public class ForecastFragment extends Fragment {
     public void onMessageEvent(ApiRespondedEvent event){
         if(event.isForecast) {
             Map<Integer, ArrayList<String>> forecasts = event.forecasts;
-            this.day1.setText(getDateStringFromEpoch(forecasts.get(0).get(2)) + "\nTemperature: " + forecasts.get(0).get(0) + "°C");
-            this.day2.setText(getDateStringFromEpoch(forecasts.get(1).get(2)) + "\nTemperature: " + forecasts.get(1).get(0) + "°C");
-            this.day3.setText(getDateStringFromEpoch(forecasts.get(2).get(2)) + "\nTemperature: " + forecasts.get(2).get(0) + "°C");
-            this.day4.setText(getDateStringFromEpoch(forecasts.get(3).get(2)) + "\nTemperature: " + forecasts.get(3).get(0) + "°C");
-            this.day5.setText(getDateStringFromEpoch(forecasts.get(4).get(2)) + "\nTemperature: " + forecasts.get(4).get(0) + "°C");
+            this.day1.setText(getDateStringFromEpoch(forecasts.get(0).get(2)) + "\nTemperature: " + forecasts.get(0).get(0) + event.units);
+            this.day2.setText(getDateStringFromEpoch(forecasts.get(1).get(2)) + "\nTemperature: " + forecasts.get(1).get(0) + event.units);
+            this.day3.setText(getDateStringFromEpoch(forecasts.get(2).get(2)) + "\nTemperature: " + forecasts.get(2).get(0) + event.units);
+            this.day4.setText(getDateStringFromEpoch(forecasts.get(3).get(2)) + "\nTemperature: " + forecasts.get(3).get(0) + event.units);
+            this.day5.setText(getDateStringFromEpoch(forecasts.get(4).get(2)) + "\nTemperature: " + forecasts.get(4).get(0) + event.units);
 
             Picasso.get().load("http://openweathermap.org/img/wn/" + event.forecasts.get(0).get(1) + ".png").into(icon1);
             Picasso.get().load("http://openweathermap.org/img/wn/" + event.forecasts.get(1).get(1) + ".png").into(icon2);
