@@ -2,6 +2,7 @@ package com.example.astroweather;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Parcel;
@@ -17,6 +18,8 @@ import androidx.fragment.app.Fragment;
 
 import com.arlib.floatingsearchview.FloatingSearchView;
 import com.arlib.floatingsearchview.suggestions.model.SearchSuggestion;
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 import com.squareup.picasso.Picasso;
 
 import org.greenrobot.eventbus.EventBus;
@@ -39,6 +42,8 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
 
+import static android.content.Context.MODE_PRIVATE;
+
 public class MainWeatherFragment extends Fragment {
 
     private View view;
@@ -49,6 +54,10 @@ public class MainWeatherFragment extends Fragment {
     ImageView imageView;
     String units;
     MainActivity activity;
+    Gson gson = new Gson();
+    FloatingSearchView floatingSearchView;
+    ArrayList<SearchSuggestion> newSuggestions;
+    TinyDB tinydb;
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container,
@@ -61,6 +70,7 @@ public class MainWeatherFragment extends Fragment {
         temperature = view.findViewById(R.id.temperature);
         imageView = view.findViewById(R.id.weatherIcon);
 
+        tinydb = new TinyDB(getContext());
         apiCaller = new APICaller(getActivity().getApplicationContext());
         UnitsChangedEvent stickyEvent = EventBus.getDefault().getStickyEvent(UnitsChangedEvent.class);
         if (stickyEvent != null) {
@@ -73,8 +83,14 @@ public class MainWeatherFragment extends Fragment {
             }
         }
         determineUsedUnits();
-        FloatingSearchView floatingSearchView = view.findViewById(R.id.floating_search_view);
-        List<SearchSuggestion> newSuggestions = new ArrayList<>();
+        floatingSearchView = view.findViewById(R.id.floating_search_view);
+        newSuggestions = new ArrayList<>();
+
+        ArrayList<String> suggestionList = tinydb.getListString("suggestionList");
+
+        for(String queries : suggestionList){
+            newSuggestions.add(new Suggestions(queries));
+        }
         floatingSearchView.setOnQueryChangeListener((oldQuery, newQuery) -> floatingSearchView.swapSuggestions(getPossibleStrings(newSuggestions, newQuery)));
         floatingSearchView.setOnSearchListener(new FloatingSearchView.OnSearchListener() {
             @Override
@@ -86,6 +102,12 @@ public class MainWeatherFragment extends Fragment {
             public void onSearchAction(String currentQuery) {
                 if (!isElementInList(newSuggestions, currentQuery)) {
                     newSuggestions.add(new Suggestions(currentQuery));
+                    ArrayList<String> suggestions = new ArrayList<>();
+                    for(SearchSuggestion s : newSuggestions){
+                        System.out.println(s.getBody());
+                        suggestions.add(s.getBody());
+                    }
+                    tinydb.putListString("suggestionList", suggestions);
                 }
                 try {
                     apiCaller.callApi(currentQuery, units);
