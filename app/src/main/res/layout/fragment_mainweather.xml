@@ -49,7 +49,7 @@
         android:layout_height="match_parent"
         android:layout_marginTop="10dp"
         app:floatingSearch_close_search_on_keyboard_dismiss="true"
-        app:floatingSearch_leftActionMode="showHamburger"
+        app:floatingSearch_leftActionMode="noLeftAction"
         app:floatingSearch_searchHint="Search..."
         app:floatingSearch_showSearchKey="false"
         app:floatingSearch_suggestionsListAnimDuration="250"

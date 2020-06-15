@@ -1,11 +1,12 @@
 package com.example.astroweather;
 
 import android.annotation.SuppressLint;
+import android.app.Instrumentation;
 import android.content.Context;
-import android.content.SharedPreferences;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Parcel;
+import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -19,7 +20,6 @@ import androidx.fragment.app.Fragment;
 import com.arlib.floatingsearchview.FloatingSearchView;
 import com.arlib.floatingsearchview.suggestions.model.SearchSuggestion;
 import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
 import com.squareup.picasso.Picasso;
 
 import org.greenrobot.eventbus.EventBus;
@@ -42,8 +42,6 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
 
-import static android.content.Context.MODE_PRIVATE;
-
 public class MainWeatherFragment extends Fragment {
 
     private View view;
@@ -58,6 +56,7 @@ public class MainWeatherFragment extends Fragment {
     FloatingSearchView floatingSearchView;
     ArrayList<SearchSuggestion> newSuggestions;
     TinyDB tinydb;
+    String lastQuery = "";
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container,
@@ -88,14 +87,25 @@ public class MainWeatherFragment extends Fragment {
 
         ArrayList<String> suggestionList = tinydb.getListString("suggestionList");
 
-        for(String queries : suggestionList){
+        for (String queries : suggestionList) {
             newSuggestions.add(new Suggestions(queries));
         }
-        floatingSearchView.setOnQueryChangeListener((oldQuery, newQuery) -> floatingSearchView.swapSuggestions(getPossibleStrings(newSuggestions, newQuery)));
+        floatingSearchView.setOnQueryChangeListener((oldQuery, newQuery) -> {
+            if (!oldQuery.equals("") && newQuery.equals("")) {
+                floatingSearchView.clearSuggestions();
+            }
+            floatingSearchView.swapSuggestions(getPossibleStrings(newSuggestions, newQuery));
+            lastQuery = newQuery;
+        });
         floatingSearchView.setOnSearchListener(new FloatingSearchView.OnSearchListener() {
             @Override
             public void onSuggestionClicked(SearchSuggestion searchSuggestion) {
-
+                floatingSearchView.setSearchText(searchSuggestion.getBody());
+                Thread t1 = new Thread(() -> {
+                    Instrumentation inst = new Instrumentation();
+                    inst.sendKeyDownUpSync(KeyEvent.KEYCODE_ENTER);
+                });
+                t1.start();
             }
 
             @Override
@@ -103,7 +113,7 @@ public class MainWeatherFragment extends Fragment {
                 if (!isElementInList(newSuggestions, currentQuery)) {
                     newSuggestions.add(new Suggestions(currentQuery));
                     ArrayList<String> suggestions = new ArrayList<>();
-                    for(SearchSuggestion s : newSuggestions){
+                    for (SearchSuggestion s : newSuggestions) {
                         System.out.println(s.getBody());
                         suggestions.add(s.getBody());
                     }
@@ -114,6 +124,18 @@ public class MainWeatherFragment extends Fragment {
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
+            }
+        });
+        floatingSearchView.setOnFocusChangeListener(new FloatingSearchView.OnFocusChangeListener() {
+            @Override
+            public void onFocus() {
+                floatingSearchView.setSearchText(lastQuery);
+                floatingSearchView.swapSuggestions(getPossibleStrings(newSuggestions, lastQuery));
+            }
+
+            @Override
+            public void onFocusCleared() {
+                floatingSearchView.setSearchBarTitle(lastQuery);
             }
         });
 
