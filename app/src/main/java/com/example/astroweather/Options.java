@@ -80,7 +80,9 @@ public class Options extends Activity {
                 //if its first run then continue with the tutorial
                 if(firstRun) {
                     guide.cleanUp();
-                    guide = setUpTourGuide(" ", " ", save);
+                    guide = setUpTourGuide("Units", "Now select desired unit system", units);
+                    hideKeyboard();
+                    units.requestFocus();
                 }
                 frequencyChoice = position;
             }
@@ -108,6 +110,10 @@ public class Options extends Activity {
         units.setOnItemSelectedEvenIfUnchangedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                if(firstRun){
+                    guide.cleanUp();
+                    guide = setUpTourGuide(" ", " ", save);
+                }
                 if(position != unitsChoice) {
                     unitsChanged = true;
                 }

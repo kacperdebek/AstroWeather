@@ -49,4 +49,5 @@ dependencies {
     implementation 'com.github.arimorty:floatingsearchview:2.1.1'
     implementation 'com.squareup.picasso:picasso:2.71828'
     implementation 'org.greenrobot:eventbus:3.2.0'
+    implementation 'com.google.code.gson:gson:2.8.6'
 }
