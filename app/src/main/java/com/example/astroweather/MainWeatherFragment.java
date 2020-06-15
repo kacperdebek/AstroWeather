@@ -31,6 +31,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import okhttp3.HttpUrl;
@@ -50,11 +51,6 @@ public class MainWeatherFragment extends Fragment {
     MainActivity activity;
 
     @Override
-    public void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-    }
-
-    @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
 
@@ -66,13 +62,20 @@ public class MainWeatherFragment extends Fragment {
         imageView = view.findViewById(R.id.weatherIcon);
 
         apiCaller = new APICaller(getActivity().getApplicationContext());
+        UnitsChangedEvent stickyEvent = EventBus.getDefault().getStickyEvent(UnitsChangedEvent.class);
+        if (stickyEvent != null) {
 
+            EventBus.getDefault().removeStickyEvent(stickyEvent);
+            try {
+                editTemperatureInFile(stickyEvent.from, stickyEvent.to);
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+        }
         determineUsedUnits();
         FloatingSearchView floatingSearchView = view.findViewById(R.id.floating_search_view);
         List<SearchSuggestion> newSuggestions = new ArrayList<>();
-        floatingSearchView.setOnQueryChangeListener((oldQuery, newQuery) -> {
-            floatingSearchView.swapSuggestions(getPossibleStrings(newSuggestions, newQuery));
-        });
+        floatingSearchView.setOnQueryChangeListener((oldQuery, newQuery) -> floatingSearchView.swapSuggestions(getPossibleStrings(newSuggestions, newQuery)));
         floatingSearchView.setOnSearchListener(new FloatingSearchView.OnSearchListener() {
             @Override
             public void onSuggestionClicked(SearchSuggestion searchSuggestion) {
@@ -81,7 +84,9 @@ public class MainWeatherFragment extends Fragment {
 
             @Override
             public void onSearchAction(String currentQuery) {
-                newSuggestions.add(new Suggestions(currentQuery));
+                if (!isElementInList(newSuggestions, currentQuery)) {
+                    newSuggestions.add(new Suggestions(currentQuery));
+                }
                 try {
                     apiCaller.callApi(currentQuery, units);
                 } catch (Exception e) {
@@ -92,6 +97,16 @@ public class MainWeatherFragment extends Fragment {
 
         return view;
     }
+
+    private boolean isElementInList(List<SearchSuggestion> list, String query) {
+        for (SearchSuggestion suggestion : list) {
+            if (suggestion.getBody().contains(query)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     @Override
     public void onResume() {
         try {
@@ -103,9 +118,9 @@ public class MainWeatherFragment extends Fragment {
         super.onResume();
     }
 
-    private void determineUsedUnits(){
+    private void determineUsedUnits() {
         MainActivity activity = (MainActivity) getActivity();
-        switch(activity.unitsSelection){
+        switch (activity.unitsSelection) {
             case 0:
                 units = "metric";
                 break;
@@ -117,6 +132,7 @@ public class MainWeatherFragment extends Fragment {
                 break;
         }
     }
+
     @SuppressLint("ParcelCreator")
     private static class Suggestions implements SearchSuggestion {
         private String name;
@@ -150,6 +166,53 @@ public class MainWeatherFragment extends Fragment {
         return result;
     }
 
+    private void editTemperatureInFile(int from, int to) throws JSONException {
+        //today weather
+        JSONObject jsonFromFile = new JSONObject(apiCaller.mReadJsonData("today.json"));
+        JSONObject main = jsonFromFile.getJSONObject("main");
+        float temp = Float.parseFloat(main.getString("temp"));
+        String convertedTemp = convertTemperature(from, to, temp);
+        main.put("temp", convertedTemp);
+        apiCaller.mCreateAndSaveFile("today.json", jsonFromFile.toString());
+
+        //weather forecast
+        JSONObject forecastJson = new JSONObject(apiCaller.mReadJsonData("forecast.json"));
+        JSONArray forecastList = forecastJson.getJSONArray("list");
+        Map<Integer, ArrayList<String>> forecasts = new HashMap<>();
+        for (int i = 0, j = 0; i < forecastList.length(); i++) {
+            if (i % 8 == 0) {
+                float temperature = Float.parseFloat(forecastList.getJSONObject(i).getJSONObject("main").getString("temp"));
+                forecastList.getJSONObject(i).getJSONObject("main").put("temp", convertTemperature(from, to, temperature));
+            }
+        }
+        apiCaller.mCreateAndSaveFile("forecast.json", forecastJson.toString());
+    }
+
+    private String convertTemperature(int from, int to, float temp) {
+        switch (from) {
+            case 0:
+                if (to == 1) {
+                    return String.format(Locale.US, "%.02f", temp * (9.0f / 5.0f) + 32.0f);
+                } else if (to == 2) {
+                    return String.format(Locale.US, "%.02f", temp + 273.15);
+                }
+            case 1:
+                if (to == 0) {
+                    return String.format(Locale.US, "%.02f", (5.0f / 9.0f) * (temp - 32.0f));
+                } else if (to == 2) {
+                    return String.format(Locale.US, "%.02f", 273.5 + ((temp - 32.0f) * (5.0f / 9.0f)));
+                }
+            case 2:
+                if (to == 0) {
+                    return String.format(Locale.US, "%.02f", temp - 273.15f);
+                } else if (to == 1) {
+                    return String.format(Locale.US, "%.02f", (((temp - 273.15f) * 9.0f / 5.0f) + 32.0f));
+                }
+            default:
+                return null;
+        }
+    }
+
     private void sendMessage(String windDirection, String windSpeed, String humidity, String visibility) {
         EventBus.getDefault().post(new ApiRespondedEvent(windDirection, windSpeed, humidity, visibility));
     }
@@ -165,9 +228,11 @@ public class MainWeatherFragment extends Fragment {
         private Response todayWeatherResponse = null;
         private Response weatherForecastResponse = null;
         private Context appContext;
-        APICaller(Context context){
+
+        APICaller(Context context) {
             this.appContext = context;
         }
+
         public void callApi(String cityName, String units) throws Exception {
             client = new OkHttpClient();
             todayWeatherRequest = createRequest(cityName, "weather", units);
@@ -207,6 +272,7 @@ public class MainWeatherFragment extends Fragment {
         class ExecuteForecastCallTask extends AsyncTask<String, Void, Void> {
 
             String responseBody;
+
             @Override
             protected Void doInBackground(String... strings) {
                 try {
@@ -238,6 +304,7 @@ public class MainWeatherFragment extends Fragment {
             for (int i = 0, j = 0; i < forecastList.length(); i++) {
                 if (i % 8 == 0) {
                     ArrayList<String> details = new ArrayList<>();
+                    //float temperature = Float.parseFloat(forecastList.getJSONObject(i).getJSONObject("main").getString("temp"));
                     details.add(forecastList.getJSONObject(i).getJSONObject("main").getString("temp"));
                     details.add(forecastList.getJSONObject(i).getJSONArray("weather").getJSONObject(0).getString("icon"));
                     details.add(forecastList.getJSONObject(i).getString("dt"));
@@ -247,6 +314,7 @@ public class MainWeatherFragment extends Fragment {
             mCreateAndSaveFile("forecast.json", responseBody);
             sendForecast(forecasts, generateTemperatureSymbol(units));
         }
+
         @SuppressLint("SetTextI18n")
         private void extractWeatherJsonAndPassTheData(String responseBody) throws JSONException {
             JSONObject todayResponse = new JSONObject(responseBody);
@@ -261,9 +329,9 @@ public class MainWeatherFragment extends Fragment {
             pressure.setText("Pressure: " + detailsObject.getString("pressure") + " hPa");
             temperature.setText("Temperature: " + detailsObject.getString("temp") + generateTemperatureSymbol(units));
             mCreateAndSaveFile("today.json", responseBody);
-            System.out.println(apiCaller.mReadJsonData("today.json"));
             sendMessage(windObject.getString("deg"), windObject.getString("speed"), detailsObject.getString("humidity"), Integer.toString(vis));
         }
+
         private Request createRequest(String cityName, String requestType, String units) {
             HttpUrl httpUrl = new HttpUrl.Builder()
                     .scheme("https")
@@ -280,8 +348,9 @@ public class MainWeatherFragment extends Fragment {
                     .get()
                     .build();
         }
-        private String generateTemperatureSymbol(String unit){
-            switch(unit){
+
+        private String generateTemperatureSymbol(String unit) {
+            switch (unit) {
                 case "metric":
                     return "°C";
                 case "imperial":
@@ -292,6 +361,7 @@ public class MainWeatherFragment extends Fragment {
                     return " ";
             }
         }
+
         public void mCreateAndSaveFile(String params, String mJsonResponse) {
             try {
                 FileWriter file = new FileWriter("/data/data/" + appContext.getPackageName() + "/" + params);
@@ -302,6 +372,7 @@ public class MainWeatherFragment extends Fragment {
                 e.printStackTrace();
             }
         }
+
         public String mReadJsonData(String params) {
             try {
                 File f = new File("/data/data/" + appContext.getPackageName() + "/" + params);

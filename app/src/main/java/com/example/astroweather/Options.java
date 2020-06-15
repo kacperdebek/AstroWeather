@@ -20,6 +20,8 @@ import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import org.greenrobot.eventbus.EventBus;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -37,7 +39,9 @@ public class Options extends Activity {
     TourGuide guide;
     int frequencyChoice = 0;
     int unitsChoice = 0;
+    int prevChoice = 0;
     boolean firstRun;
+    private boolean unitsChanged;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -96,6 +100,7 @@ public class Options extends Activity {
         ArrayAdapter<String> unitsAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, availableUnits);
         unitsAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
 
+        unitsChanged = false;
         // set adapter to the spinner
         units.setAdapter(unitsAdapter);
         //prevent setOnItemSelectedListener from invoking onItemSelected
@@ -103,6 +108,10 @@ public class Options extends Activity {
         units.setOnItemSelectedEvenIfUnchangedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                if(position != unitsChoice) {
+                    unitsChanged = true;
+                }
+                prevChoice = unitsChoice;
                 unitsChoice = position;
             }
             @Override
@@ -139,30 +148,31 @@ public class Options extends Activity {
         }
         //Configure the save button
         save = findViewById(R.id.saveOptions);
-        save.setOnClickListener(new View.OnClickListener() {
-            public void onClick(View view) {
-                Intent i = new Intent(view.getContext(), MainActivity.class);
-                //Make sure the user is not trying to save empty values
-                if (!TextUtils.isEmpty(longitude.getText().toString())) {
-                    i.putExtra("longitude", longitude.getText().toString());
-                }
-                if (!TextUtils.isEmpty(latitude.getText().toString())) {
-                    i.putExtra("latitude", latitude.getText().toString());
-                }
-                i.putExtra("frequency", frequencyChoice);
-                i.putExtra("units", unitsChoice);
-                Context context = getApplicationContext();
-                //Inform the user about correct options saving
-                Toast.makeText(context, "New options saved", Toast.LENGTH_SHORT).show();
-                //Set the firstrun variable to false - during next app launches tutorial will be omitted
-                if (firstRun) {
-                    SharedPreferences pref = getApplicationContext().getSharedPreferences("MyPref", MODE_PRIVATE);
-                    pref.edit().putBoolean("firstrun", false).apply();
-                    firstRun = false;
-                }
-                //Go back to main activity
-                startActivity(i);
+        save.setOnClickListener(view -> {
+            Intent i = new Intent(view.getContext(), MainActivity.class);
+            //Make sure the user is not trying to save empty values
+            if (!TextUtils.isEmpty(longitude.getText().toString())) {
+                i.putExtra("longitude", longitude.getText().toString());
             }
+            if (!TextUtils.isEmpty(latitude.getText().toString())) {
+                i.putExtra("latitude", latitude.getText().toString());
+            }
+            i.putExtra("frequency", frequencyChoice);
+            i.putExtra("units", unitsChoice);
+            Context context = getApplicationContext();
+            if(unitsChanged){
+                sendUnitsChanged();
+            }
+            //Inform the user about correct options saving
+            Toast.makeText(context, "New options saved", Toast.LENGTH_SHORT).show();
+            //Set the firstrun variable to false - during next app launches tutorial will be omitted
+            if (firstRun) {
+                SharedPreferences pref = getApplicationContext().getSharedPreferences("MyPref", MODE_PRIVATE);
+                pref.edit().putBoolean("firstrun", false).apply();
+                firstRun = false;
+            }
+            //Go back to main activity
+            startActivity(i);
         });
 
         if (firstRun) {
@@ -174,7 +184,9 @@ public class Options extends Activity {
             guide = setUpTourGuide("Latitude", "Enter your current latitude here", latitude);
         }
     }
-
+    private void sendUnitsChanged(){
+        EventBus.getDefault().postSticky(new UnitsChangedEvent(prevChoice, unitsChoice));
+    }
     public TourGuide setUpTourGuide(String tooltipTitle, String description, View tourElement) {
         return TourGuide.init(this).with(TourGuide.Technique.CLICK)
                 .setPointer(new Pointer())
