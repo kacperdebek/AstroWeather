@@ -90,55 +90,7 @@ public class MainWeatherFragment extends Fragment {
         for (String queries : suggestionList) {
             newSuggestions.add(new Suggestions(queries));
         }
-        floatingSearchView.setOnQueryChangeListener((oldQuery, newQuery) -> {
-            if (!oldQuery.equals("") && newQuery.equals("")) {
-                floatingSearchView.clearSuggestions();
-            }
-            floatingSearchView.swapSuggestions(getPossibleStrings(newSuggestions, newQuery));
-            lastQuery = newQuery;
-        });
-        floatingSearchView.setOnSearchListener(new FloatingSearchView.OnSearchListener() {
-            @Override
-            public void onSuggestionClicked(SearchSuggestion searchSuggestion) {
-                floatingSearchView.setSearchText(searchSuggestion.getBody());
-                Thread t1 = new Thread(() -> {
-                    Instrumentation inst = new Instrumentation();
-                    inst.sendKeyDownUpSync(KeyEvent.KEYCODE_ENTER);
-                });
-                t1.start();
-            }
-
-            @Override
-            public void onSearchAction(String currentQuery) {
-                if (!isElementInList(newSuggestions, currentQuery)) {
-                    newSuggestions.add(new Suggestions(currentQuery));
-                    ArrayList<String> suggestions = new ArrayList<>();
-                    for (SearchSuggestion s : newSuggestions) {
-                        System.out.println(s.getBody());
-                        suggestions.add(s.getBody());
-                    }
-                    tinydb.putListString("suggestionList", suggestions);
-                }
-                try {
-                    apiCaller.callApi(currentQuery, units);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }
-        });
-        floatingSearchView.setOnFocusChangeListener(new FloatingSearchView.OnFocusChangeListener() {
-            @Override
-            public void onFocus() {
-                floatingSearchView.setSearchText(lastQuery);
-                floatingSearchView.swapSuggestions(getPossibleStrings(newSuggestions, lastQuery));
-            }
-
-            @Override
-            public void onFocusCleared() {
-                floatingSearchView.setSearchBarTitle(lastQuery);
-            }
-        });
-
+        setUpSearchBarListeners();
         return view;
     }
 
@@ -175,6 +127,56 @@ public class MainWeatherFragment extends Fragment {
                 units = "standard";
                 break;
         }
+    }
+
+    private void setUpSearchBarListeners() {
+        floatingSearchView.setOnQueryChangeListener((oldQuery, newQuery) -> {
+            if (!oldQuery.equals("") && newQuery.equals("")) {
+                floatingSearchView.clearSuggestions();
+            }
+            floatingSearchView.swapSuggestions(getPossibleStrings(newSuggestions, newQuery));
+            lastQuery = newQuery;
+        });
+        floatingSearchView.setOnSearchListener(new FloatingSearchView.OnSearchListener() {
+            @Override
+            public void onSuggestionClicked(SearchSuggestion searchSuggestion) {
+                floatingSearchView.setSearchText(searchSuggestion.getBody());
+                Thread t1 = new Thread(() -> {
+                    Instrumentation inst = new Instrumentation();
+                    inst.sendKeyDownUpSync(KeyEvent.KEYCODE_ENTER);
+                });
+                t1.start();
+            }
+
+            @Override
+            public void onSearchAction(String currentQuery) {
+                if (!isElementInList(newSuggestions, currentQuery)) {
+                    newSuggestions.add(new Suggestions(currentQuery));
+                    ArrayList<String> suggestions = new ArrayList<>();
+                    for (SearchSuggestion s : newSuggestions) {
+                        suggestions.add(s.getBody());
+                    }
+                    tinydb.putListString("suggestionList", suggestions);
+                }
+                try {
+                    apiCaller.callApi(currentQuery, units);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+        floatingSearchView.setOnFocusChangeListener(new FloatingSearchView.OnFocusChangeListener() {
+            @Override
+            public void onFocus() {
+                floatingSearchView.setSearchText(lastQuery);
+                floatingSearchView.swapSuggestions(getPossibleStrings(newSuggestions, lastQuery));
+            }
+
+            @Override
+            public void onFocusCleared() {
+                floatingSearchView.setSearchBarTitle(lastQuery);
+            }
+        });
     }
 
     @SuppressLint("ParcelCreator")
@@ -304,7 +306,9 @@ public class MainWeatherFragment extends Fragment {
                         extractWeatherJsonAndPassTheData(responseBody);
                     } catch (IOException | JSONException e) {
                         e.printStackTrace();
+                        newSuggestions.remove(newSuggestions.size() - 1);
                         Toast.makeText(getContext(), "Invalid location", Toast.LENGTH_SHORT).show();
+
                     }
 
                 } else {
