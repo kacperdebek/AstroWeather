@@ -1,6 +1,7 @@
 package com.example.astroweather;
 
 import android.annotation.SuppressLint;
+import android.content.Context;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Parcel;
@@ -23,6 +24,9 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -37,12 +41,13 @@ import okhttp3.Response;
 public class MainWeatherFragment extends Fragment {
 
     private View view;
-    private APICaller apiCaller = new APICaller();
+    private APICaller apiCaller;
     TextView weather;
     TextView pressure;
     TextView temperature;
     ImageView imageView;
     String units;
+    MainActivity activity;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -54,11 +59,14 @@ public class MainWeatherFragment extends Fragment {
                              Bundle savedInstanceState) {
 
         view = inflater.inflate(R.layout.fragment_mainweather, container, false);
-
+        activity = (MainActivity) getActivity();
         weather = view.findViewById(R.id.weatherDescription);
         pressure = view.findViewById(R.id.pressure);
         temperature = view.findViewById(R.id.temperature);
         imageView = view.findViewById(R.id.weatherIcon);
+
+        apiCaller = new APICaller(getActivity().getApplicationContext());
+
         determineUsedUnits();
         FloatingSearchView floatingSearchView = view.findViewById(R.id.floating_search_view);
         List<SearchSuggestion> newSuggestions = new ArrayList<>();
@@ -84,6 +92,17 @@ public class MainWeatherFragment extends Fragment {
 
         return view;
     }
+    @Override
+    public void onResume() {
+        try {
+            apiCaller.extractForecastJsonAndPassTheData(apiCaller.mReadJsonData("forecast.json"));
+            apiCaller.extractWeatherJsonAndPassTheData(apiCaller.mReadJsonData("today.json"));
+        } catch (JSONException | IOException e) {
+            e.printStackTrace();
+        }
+        super.onResume();
+    }
+
     private void determineUsedUnits(){
         MainActivity activity = (MainActivity) getActivity();
         switch(activity.unitsSelection){
@@ -145,7 +164,10 @@ public class MainWeatherFragment extends Fragment {
         private Request weatherForecastRequest;
         private Response todayWeatherResponse = null;
         private Response weatherForecastResponse = null;
-
+        private Context appContext;
+        APICaller(Context context){
+            this.appContext = context;
+        }
         public void callApi(String cityName, String units) throws Exception {
             client = new OkHttpClient();
             todayWeatherRequest = createRequest(cityName, "weather", units);
@@ -169,21 +191,10 @@ public class MainWeatherFragment extends Fragment {
             protected void onPostExecute(Void param) {
                 if (todayWeatherResponse != null) {
                     try {
-                        JSONObject todayResponse = new JSONObject(todayWeatherResponse.body().string());
-                        JSONArray weatherArray = todayResponse.getJSONArray("weather");
-                        JSONObject detailsObject = todayResponse.getJSONObject("main");
-                        JSONObject windObject = todayResponse.getJSONObject("wind");
-                        int vis = todayResponse.getInt("visibility");
-
-                        Picasso.get().load("http://openweathermap.org/img/wn/" + weatherArray.getJSONObject(0).getString("icon") + "@2x.png").into(imageView);
-
-                        weather.setText("Weather: " + weatherArray.getJSONObject(0).getString("description"));
-                        pressure.setText("Pressure: " + detailsObject.getString("pressure") + " hPa");
-                        temperature.setText("Temperature: " + detailsObject.getString("temp") + generateTemperatureSymbol(units));
-
-                        sendMessage(windObject.getString("deg"), windObject.getString("speed"), detailsObject.getString("humidity"), Integer.toString(vis));
+                        String responseBody = todayWeatherResponse.body().string();
+                        extractWeatherJsonAndPassTheData(responseBody);
                     } catch (IOException | JSONException e) {
-                        //e.printStackTrace();
+                        e.printStackTrace();
                         Toast.makeText(getContext(), "Invalid location", Toast.LENGTH_SHORT).show();
                     }
 
@@ -194,14 +205,14 @@ public class MainWeatherFragment extends Fragment {
         }
 
         class ExecuteForecastCallTask extends AsyncTask<String, Void, Void> {
-            JSONObject forecastResponse;
 
+            String responseBody;
             @Override
             protected Void doInBackground(String... strings) {
                 try {
                     weatherForecastResponse = client.newCall(weatherForecastRequest).execute();
-                    forecastResponse = new JSONObject(weatherForecastResponse.body().string());
-                } catch (IOException | JSONException e) {
+                    responseBody = weatherForecastResponse.body().string();
+                } catch (IOException e) {
                     e.printStackTrace();
                 }
                 return null;
@@ -211,20 +222,8 @@ public class MainWeatherFragment extends Fragment {
             protected void onPostExecute(Void param) {
                 if (weatherForecastResponse != null) {
                     try {
-
-                        JSONArray forecastList = forecastResponse.getJSONArray("list");
-                        Map<Integer, ArrayList<String>> forecasts = new HashMap<>();
-                        for (int i = 0, j = 0; i < forecastList.length(); i++) {
-                            if (i % 8 == 0) {
-                                ArrayList<String> details = new ArrayList<>();
-                                details.add(forecastList.getJSONObject(i).getJSONObject("main").getString("temp"));
-                                details.add(forecastList.getJSONObject(i).getJSONArray("weather").getJSONObject(0).getString("icon"));
-                                details.add(forecastList.getJSONObject(i).getString("dt"));
-                                forecasts.put(j++, details);
-                            }
-                        }
-                        sendForecast(forecasts, generateTemperatureSymbol(units));
-                    } catch (JSONException e) {
+                        extractForecastJsonAndPassTheData(responseBody);
+                    } catch (JSONException | IOException e) {
                         e.printStackTrace();
                     }
                 }
@@ -232,6 +231,39 @@ public class MainWeatherFragment extends Fragment {
             }
         }
 
+        private void extractForecastJsonAndPassTheData(String responseBody) throws JSONException, IOException {
+            JSONObject forecastResponse = new JSONObject(responseBody);
+            JSONArray forecastList = forecastResponse.getJSONArray("list");
+            Map<Integer, ArrayList<String>> forecasts = new HashMap<>();
+            for (int i = 0, j = 0; i < forecastList.length(); i++) {
+                if (i % 8 == 0) {
+                    ArrayList<String> details = new ArrayList<>();
+                    details.add(forecastList.getJSONObject(i).getJSONObject("main").getString("temp"));
+                    details.add(forecastList.getJSONObject(i).getJSONArray("weather").getJSONObject(0).getString("icon"));
+                    details.add(forecastList.getJSONObject(i).getString("dt"));
+                    forecasts.put(j++, details);
+                }
+            }
+            mCreateAndSaveFile("forecast.json", responseBody);
+            sendForecast(forecasts, generateTemperatureSymbol(units));
+        }
+        @SuppressLint("SetTextI18n")
+        private void extractWeatherJsonAndPassTheData(String responseBody) throws JSONException {
+            JSONObject todayResponse = new JSONObject(responseBody);
+            JSONArray weatherArray = todayResponse.getJSONArray("weather");
+            JSONObject detailsObject = todayResponse.getJSONObject("main");
+            JSONObject windObject = todayResponse.getJSONObject("wind");
+            int vis = todayResponse.getInt("visibility");
+
+            Picasso.get().load("http://openweathermap.org/img/wn/" + weatherArray.getJSONObject(0).getString("icon") + "@2x.png").into(imageView);
+
+            weather.setText("Weather: " + weatherArray.getJSONObject(0).getString("description"));
+            pressure.setText("Pressure: " + detailsObject.getString("pressure") + " hPa");
+            temperature.setText("Temperature: " + detailsObject.getString("temp") + generateTemperatureSymbol(units));
+            mCreateAndSaveFile("today.json", responseBody);
+            System.out.println(apiCaller.mReadJsonData("today.json"));
+            sendMessage(windObject.getString("deg"), windObject.getString("speed"), detailsObject.getString("humidity"), Integer.toString(vis));
+        }
         private Request createRequest(String cityName, String requestType, String units) {
             HttpUrl httpUrl = new HttpUrl.Builder()
                     .scheme("https")
@@ -259,6 +291,30 @@ public class MainWeatherFragment extends Fragment {
                 default:
                     return " ";
             }
+        }
+        public void mCreateAndSaveFile(String params, String mJsonResponse) {
+            try {
+                FileWriter file = new FileWriter("/data/data/" + appContext.getPackageName() + "/" + params);
+                file.write(mJsonResponse);
+                file.flush();
+                file.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        public String mReadJsonData(String params) {
+            try {
+                File f = new File("/data/data/" + appContext.getPackageName() + "/" + params);
+                FileInputStream is = new FileInputStream(f);
+                int size = is.available();
+                byte[] buffer = new byte[size];
+                is.read(buffer);
+                is.close();
+                return new String(buffer);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            return "error";
         }
     }
 
