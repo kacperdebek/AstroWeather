@@ -6,8 +6,12 @@ import android.content.Context;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Parcel;
+import android.view.ContextMenu;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.inputmethod.InputMethodManager;
@@ -16,6 +20,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.core.content.res.ResourcesCompat;
 import androidx.fragment.app.Fragment;
 
@@ -59,6 +64,7 @@ public class MainWeatherFragment extends Fragment {
     ArrayList<SearchSuggestion> favouritesList;
     TinyDB tinydb;
     String lastQuery = "";
+    boolean isShowFavouritesChecked = false;
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container,
@@ -73,6 +79,7 @@ public class MainWeatherFragment extends Fragment {
 
         tinydb = new TinyDB(getContext());
         apiCaller = new APICaller(getActivity().getApplicationContext());
+
         UnitsChangedEvent stickyEvent = EventBus.getDefault().getStickyEvent(UnitsChangedEvent.class);
         if (stickyEvent != null) {
 
@@ -89,19 +96,18 @@ public class MainWeatherFragment extends Fragment {
         favouritesList = new ArrayList<>();
         ArrayList<String> suggestionList = tinydb.getListString("suggestionList");
         ArrayList<String> favourites = tinydb.getListString("favouritesList");
+        isShowFavouritesChecked = tinydb.getBoolean("showFavourites");
 
         for (String queries : suggestionList) {
             newSuggestions.add(new Suggestions(queries));
         }
         for (String queries : favourites) {
             favouritesList.add(new Suggestions(queries));
-            System.out.println(queries);
         }
-
         setUpSearchBarListeners();
+
         return view;
     }
-
     private boolean listContainsQuery(List<SearchSuggestion> list, String query) {
         for (SearchSuggestion suggestion : list) {
             if (suggestion.getBody().contains(query)) {
@@ -129,6 +135,7 @@ public class MainWeatherFragment extends Fragment {
         super.onResume();
     }
 
+
     private void determineUsedUnits() {
         MainActivity activity = (MainActivity) getActivity();
         switch (activity.unitsSelection) {
@@ -149,13 +156,16 @@ public class MainWeatherFragment extends Fragment {
             if (!oldQuery.equals("") && newQuery.equals("")) {
                 floatingSearchView.clearSuggestions();
             }
-            floatingSearchView.swapSuggestions(getPossibleStrings(newSuggestions, newQuery));
+            if(isShowFavouritesChecked) {
+                floatingSearchView.swapSuggestions(getPossibleStrings(favouritesList, newQuery));
+            } else {
+                floatingSearchView.swapSuggestions(getPossibleStrings(newSuggestions, newQuery));
+            }
             lastQuery = newQuery;
         });
         floatingSearchView.setOnSearchListener(new FloatingSearchView.OnSearchListener() {
             @Override
             public void onSuggestionClicked(SearchSuggestion searchSuggestion) {
-                System.out.println("clicked");
                 floatingSearchView.setSearchText(searchSuggestion.getBody());
                 Thread t1 = new Thread(() -> {
                     Instrumentation inst = new Instrumentation();
@@ -185,7 +195,11 @@ public class MainWeatherFragment extends Fragment {
             @Override
             public void onFocus() {
                 floatingSearchView.setSearchText(lastQuery);
-                floatingSearchView.swapSuggestions(getPossibleStrings(newSuggestions, lastQuery));
+                if(isShowFavouritesChecked) {
+                    floatingSearchView.swapSuggestions(getPossibleStrings(favouritesList, lastQuery));
+                } else {
+                    floatingSearchView.swapSuggestions(getPossibleStrings(newSuggestions, lastQuery));
+                }
             }
 
             @Override
@@ -194,40 +208,35 @@ public class MainWeatherFragment extends Fragment {
                 hideKeyboard();
             }
         });
-        floatingSearchView.setOnBindSuggestionCallback(new SearchSuggestionsAdapter.OnBindSuggestionCallback() {
-            @Override
-            public void onBindSuggestion(View suggestionView, ImageView leftIcon,
-                                         TextView textView, SearchSuggestion item, int itemPosition) {
-                System.out.println("onbindsuggestion");
+        floatingSearchView.setOnBindSuggestionCallback((suggestionView, leftIcon, textView, item, itemPosition) -> {
 
-                if (isElementInList(favouritesList, item.getBody())) {
-                    leftIcon.setImageDrawable(ResourcesCompat.getDrawable(getResources(),
-                            R.drawable.star_filled, null));
-                } else {
+            if (isElementInList(favouritesList, item.getBody())) {
+                leftIcon.setImageDrawable(ResourcesCompat.getDrawable(getResources(),
+                        R.drawable.star_filled, null));
+            } else {
+                leftIcon.setImageDrawable(ResourcesCompat.getDrawable(getResources(),
+                        R.drawable.star_empty, null));
+            }
+            leftIcon.setOnClickListener(v -> {
+                if(isElementInList(favouritesList, item.getBody())){
+                    favouritesList.remove(item);
                     leftIcon.setImageDrawable(ResourcesCompat.getDrawable(getResources(),
                             R.drawable.star_empty, null));
+                } else {
+                    favouritesList.add(item);
+                    leftIcon.setImageDrawable(ResourcesCompat.getDrawable(getResources(),
+                            R.drawable.star_filled, null));
                 }
-                //leftIcon.setAlpha(.36f);
-                leftIcon.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View v) {
-                        if(isElementInList(favouritesList, item.getBody())){
-                            favouritesList.remove(item);
-                            leftIcon.setImageDrawable(ResourcesCompat.getDrawable(getResources(),
-                                    R.drawable.star_empty, null));
-                        } else {
-                            favouritesList.add(item);
-                            leftIcon.setImageDrawable(ResourcesCompat.getDrawable(getResources(),
-                                    R.drawable.star_filled, null));
-                        }
-                        ArrayList<String> favourites = new ArrayList<>();
-                        for (SearchSuggestion s : favouritesList) {
-                            favourites.add(s.getBody());
-                        }
-                        tinydb.putListString("favouritesList", favourites);
-                    }
-                });
-            }
+                ArrayList<String> favourites = new ArrayList<>();
+                for (SearchSuggestion s : favouritesList) {
+                    favourites.add(s.getBody());
+                }
+                tinydb.putListString("favouritesList", favourites);
+            });
+        });
+        floatingSearchView.setOnMenuItemClickListener(item -> {
+            isShowFavouritesChecked = !isShowFavouritesChecked;
+            tinydb.putBoolean("showFavourites", isShowFavouritesChecked);
         });
     }
     private void hideKeyboard() {
@@ -363,7 +372,7 @@ public class MainWeatherFragment extends Fragment {
                         String responseBody = todayWeatherResponse.body().string();
                         extractWeatherJsonAndPassTheData(responseBody);
                     } catch (IOException | JSONException e) {
-                        e.printStackTrace();
+                        //e.printStackTrace();
                         newSuggestions.remove(newSuggestions.size() - 1);
                         Toast.makeText(getContext(), "Invalid location", Toast.LENGTH_SHORT).show();
 

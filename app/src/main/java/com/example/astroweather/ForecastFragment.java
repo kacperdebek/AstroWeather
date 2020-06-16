@@ -3,6 +3,7 @@ package com.example.astroweather;
 import android.annotation.SuppressLint;
 import android.os.Bundle;
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -65,6 +66,7 @@ public class ForecastFragment extends Fragment {
         super.onStop();
         EventBus.getDefault().unregister(this);
     }
+
     @SuppressLint("SetTextI18n")
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void onMessageEvent(ApiRespondedEvent event){
