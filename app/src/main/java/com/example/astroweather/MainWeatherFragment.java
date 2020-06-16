@@ -10,16 +10,18 @@ import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.core.content.res.ResourcesCompat;
 import androidx.fragment.app.Fragment;
 
 import com.arlib.floatingsearchview.FloatingSearchView;
+import com.arlib.floatingsearchview.suggestions.SearchSuggestionsAdapter;
 import com.arlib.floatingsearchview.suggestions.model.SearchSuggestion;
-import com.google.gson.Gson;
 import com.squareup.picasso.Picasso;
 
 import org.greenrobot.eventbus.EventBus;
@@ -52,9 +54,9 @@ public class MainWeatherFragment extends Fragment {
     ImageView imageView;
     String units;
     MainActivity activity;
-    Gson gson = new Gson();
     FloatingSearchView floatingSearchView;
     ArrayList<SearchSuggestion> newSuggestions;
+    ArrayList<SearchSuggestion> favouritesList;
     TinyDB tinydb;
     String lastQuery = "";
 
@@ -84,17 +86,23 @@ public class MainWeatherFragment extends Fragment {
         determineUsedUnits();
         floatingSearchView = view.findViewById(R.id.floating_search_view);
         newSuggestions = new ArrayList<>();
-
+        favouritesList = new ArrayList<>();
         ArrayList<String> suggestionList = tinydb.getListString("suggestionList");
+        ArrayList<String> favourites = tinydb.getListString("favouritesList");
 
         for (String queries : suggestionList) {
             newSuggestions.add(new Suggestions(queries));
         }
+        for (String queries : favourites) {
+            favouritesList.add(new Suggestions(queries));
+            System.out.println(queries);
+        }
+
         setUpSearchBarListeners();
         return view;
     }
 
-    private boolean isElementInList(List<SearchSuggestion> list, String query) {
+    private boolean listContainsQuery(List<SearchSuggestion> list, String query) {
         for (SearchSuggestion suggestion : list) {
             if (suggestion.getBody().contains(query)) {
                 return true;
@@ -102,7 +110,14 @@ public class MainWeatherFragment extends Fragment {
         }
         return false;
     }
-
+    private boolean isElementInList(List<SearchSuggestion> list, String query) {
+        for (SearchSuggestion suggestion : list) {
+            if (suggestion.getBody().equals(query)) {
+                return true;
+            }
+        }
+        return false;
+    }
     @Override
     public void onResume() {
         try {
@@ -140,6 +155,7 @@ public class MainWeatherFragment extends Fragment {
         floatingSearchView.setOnSearchListener(new FloatingSearchView.OnSearchListener() {
             @Override
             public void onSuggestionClicked(SearchSuggestion searchSuggestion) {
+                System.out.println("clicked");
                 floatingSearchView.setSearchText(searchSuggestion.getBody());
                 Thread t1 = new Thread(() -> {
                     Instrumentation inst = new Instrumentation();
@@ -150,7 +166,7 @@ public class MainWeatherFragment extends Fragment {
 
             @Override
             public void onSearchAction(String currentQuery) {
-                if (!isElementInList(newSuggestions, currentQuery)) {
+                if (!listContainsQuery(newSuggestions, currentQuery)) {
                     newSuggestions.add(new Suggestions(currentQuery));
                     ArrayList<String> suggestions = new ArrayList<>();
                     for (SearchSuggestion s : newSuggestions) {
@@ -175,10 +191,52 @@ public class MainWeatherFragment extends Fragment {
             @Override
             public void onFocusCleared() {
                 floatingSearchView.setSearchBarTitle(lastQuery);
+                hideKeyboard();
+            }
+        });
+        floatingSearchView.setOnBindSuggestionCallback(new SearchSuggestionsAdapter.OnBindSuggestionCallback() {
+            @Override
+            public void onBindSuggestion(View suggestionView, ImageView leftIcon,
+                                         TextView textView, SearchSuggestion item, int itemPosition) {
+                System.out.println("onbindsuggestion");
+
+                if (isElementInList(favouritesList, item.getBody())) {
+                    leftIcon.setImageDrawable(ResourcesCompat.getDrawable(getResources(),
+                            R.drawable.star_filled, null));
+                } else {
+                    leftIcon.setImageDrawable(ResourcesCompat.getDrawable(getResources(),
+                            R.drawable.star_empty, null));
+                }
+                //leftIcon.setAlpha(.36f);
+                leftIcon.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        if(isElementInList(favouritesList, item.getBody())){
+                            favouritesList.remove(item);
+                            leftIcon.setImageDrawable(ResourcesCompat.getDrawable(getResources(),
+                                    R.drawable.star_empty, null));
+                        } else {
+                            favouritesList.add(item);
+                            leftIcon.setImageDrawable(ResourcesCompat.getDrawable(getResources(),
+                                    R.drawable.star_filled, null));
+                        }
+                        ArrayList<String> favourites = new ArrayList<>();
+                        for (SearchSuggestion s : favouritesList) {
+                            favourites.add(s.getBody());
+                        }
+                        tinydb.putListString("favouritesList", favourites);
+                    }
+                });
             }
         });
     }
-
+    private void hideKeyboard() {
+        View view = this.getActivity().getCurrentFocus();
+        if (view != null) {
+            InputMethodManager imm = (InputMethodManager) getActivity().getSystemService(Context.INPUT_METHOD_SERVICE);
+            imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
+        }
+    }
     @SuppressLint("ParcelCreator")
     private static class Suggestions implements SearchSuggestion {
         private String name;
