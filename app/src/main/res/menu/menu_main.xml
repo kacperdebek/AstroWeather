@@ -4,6 +4,7 @@
     <item
         android:id="@+id/optionHome"
         android:enabled="true"
+        android:checkable="true"
         android:title="Show favourites"
         app:showAsAction="never" />
 </menu>

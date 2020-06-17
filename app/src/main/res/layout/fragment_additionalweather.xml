@@ -9,37 +9,41 @@
         android:id="@+id/icon1"
         android:layout_width="83dp"
         android:layout_height="83dp"
+        android:layout_marginStart="16dp"
+        android:src="@drawable/kite"
         app:layout_constraintBottom_toTopOf="@+id/icon2"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        android:src="@drawable/kite" />
+        app:layout_constraintTop_toTopOf="parent" />
 
     <ImageView
         android:id="@+id/icon2"
         android:layout_width="83dp"
         android:layout_height="83dp"
+        android:layout_marginStart="16dp"
+        android:src="@drawable/wind"
         app:layout_constraintBottom_toTopOf="@+id/icon3"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/icon1"
-        android:src="@drawable/wind" />
+        app:layout_constraintTop_toBottomOf="@+id/icon1" />
 
     <ImageView
         android:id="@+id/icon3"
         android:layout_width="83dp"
         android:layout_height="83dp"
+        android:layout_marginStart="16dp"
+        android:src="@drawable/visibility"
         app:layout_constraintBottom_toBottomOf="@+id/visibility"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="@+id/visibility"
-        android:src="@drawable/visibility" />
+        app:layout_constraintTop_toTopOf="@+id/visibility" />
 
     <ImageView
         android:id="@+id/icon4"
         android:layout_width="83dp"
         android:layout_height="83dp"
+        android:layout_marginStart="16dp"
+        android:src="@drawable/humidity"
         app:layout_constraintBottom_toBottomOf="@+id/humidity"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="@+id/humidity"
-        android:src="@drawable/humidity" />
+        app:layout_constraintTop_toTopOf="@+id/humidity" />
 
     <TextView
         android:id="@+id/windSpeed"

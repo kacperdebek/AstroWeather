@@ -6,12 +6,8 @@ import android.content.Context;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Parcel;
-import android.view.ContextMenu;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
-import android.view.Menu;
-import android.view.MenuInflater;
-import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.inputmethod.InputMethodManager;
@@ -20,12 +16,10 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.core.content.res.ResourcesCompat;
 import androidx.fragment.app.Fragment;
 
 import com.arlib.floatingsearchview.FloatingSearchView;
-import com.arlib.floatingsearchview.suggestions.SearchSuggestionsAdapter;
 import com.arlib.floatingsearchview.suggestions.model.SearchSuggestion;
 import com.squareup.picasso.Picasso;
 
@@ -97,7 +91,7 @@ public class MainWeatherFragment extends Fragment {
         favouritesList = new ArrayList<>();
         ArrayList<String> suggestionList = tinydb.getListString("suggestionList");
         ArrayList<String> favourites = tinydb.getListString("favouritesList");
-        isShowFavouritesChecked = tinydb.getBoolean("showFavourites");
+        isShowFavouritesChecked = false;
 
         for (String queries : suggestionList) {
             newSuggestions.add(new Suggestions(queries));
@@ -245,7 +239,7 @@ public class MainWeatherFragment extends Fragment {
         });
         floatingSearchView.setOnMenuItemClickListener(item -> {
             isShowFavouritesChecked = !isShowFavouritesChecked;
-            tinydb.putBoolean("showFavourites", isShowFavouritesChecked);
+            item.setChecked(isShowFavouritesChecked);
         });
     }
     private void hideKeyboard() {
@@ -381,7 +375,7 @@ public class MainWeatherFragment extends Fragment {
                         extractWeatherJsonAndPassTheData(responseBody);
                     } catch (IOException | JSONException e) {
                         e.printStackTrace();
-                        newSuggestions.remove(newSuggestions.size() - 1); //TODO: for some reason it still gets added (after reset??)
+                        newSuggestions.remove(newSuggestions.size() - 1);
                         ArrayList<String> suggestions = new ArrayList<>();
                         for (SearchSuggestion s : newSuggestions) {
                             suggestions.add(s.getBody());
