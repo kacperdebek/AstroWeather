@@ -1,8 +1,10 @@
 package com.example.astroweather;
 
+import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.Configuration;
+import android.net.ConnectivityManager;
 import android.os.Bundle;
 import android.os.Handler;
 import androidx.fragment.app.FragmentActivity;
@@ -19,6 +21,9 @@ import com.astrocalculator.AstroCalculator;
 import com.astrocalculator.AstroDateTime;
 import com.moodysalem.TimezoneMapper;
 
+import org.json.JSONObject;
+
+import java.text.Normalizer;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.TimeZone;

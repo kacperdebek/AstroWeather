@@ -3,6 +3,7 @@ package com.example.astroweather;
 import android.annotation.SuppressLint;
 import android.app.Instrumentation;
 import android.content.Context;
+import android.net.ConnectivityManager;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Parcel;
@@ -32,6 +33,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -47,7 +49,12 @@ import okhttp3.Response;
 public class MainWeatherFragment extends Fragment {
 
     private View view;
-    private APICaller apiCaller;
+
+    public APICaller getApiCaller() {
+        return apiCaller;
+    }
+
+    public APICaller apiCaller;
     TextView weather;
     TextView pressure;
     TextView temperature;
@@ -59,6 +66,7 @@ public class MainWeatherFragment extends Fragment {
     ArrayList<SearchSuggestion> favouritesList;
     TinyDB tinydb;
     String lastQuery = "";
+    public String currentCity;
     boolean isShowFavouritesChecked = false;
 
     @Override
@@ -101,9 +109,9 @@ public class MainWeatherFragment extends Fragment {
         }
 
         setUpSearchBarListeners();
-
         return view;
     }
+
     private boolean listContainsQuery(List<SearchSuggestion> list, String query) {
         for (SearchSuggestion suggestion : list) {
             if (suggestion.getBody().contains(query)) {
@@ -112,6 +120,7 @@ public class MainWeatherFragment extends Fragment {
         }
         return false;
     }
+
     private boolean isElementInList(List<SearchSuggestion> list, String query) {
         for (SearchSuggestion suggestion : list) {
             if (suggestion.getBody().equals(query)) {
@@ -120,12 +129,26 @@ public class MainWeatherFragment extends Fragment {
         }
         return false;
     }
+
+    private boolean isNetworkConnected() {
+        ConnectivityManager cm = (ConnectivityManager) getActivity().getSystemService(Context.CONNECTIVITY_SERVICE);
+        return cm.getActiveNetworkInfo() != null && cm.getActiveNetworkInfo().isConnected();
+    }
+
     @Override
     public void onResume() {
+        String todayWeather = apiCaller.mReadJsonData("today.json");
         try {
-            apiCaller.extractForecastJsonAndPassTheData(apiCaller.mReadJsonData("forecast.json"));
-            apiCaller.extractWeatherJsonAndPassTheData(apiCaller.mReadJsonData("today.json"));
-        } catch (JSONException | IOException e) {
+            currentCity = new JSONObject(todayWeather).getString("name");
+            if (isNetworkConnected()) {
+                apiCaller.callApi(Normalizer
+                        .normalize(currentCity, Normalizer.Form.NFD)
+                        .replaceAll("[^\\p{ASCII}]", ""), units);
+            } else {
+                apiCaller.extractForecastJsonAndPassTheData(apiCaller.mReadJsonData("forecast.json"));
+                apiCaller.extractWeatherJsonAndPassTheData(todayWeather);
+            }
+        } catch (Exception e) {
             e.printStackTrace();
         }
         super.onResume();
@@ -146,7 +169,8 @@ public class MainWeatherFragment extends Fragment {
                 break;
         }
     }
-    private void removeSuggestionByName(List<SearchSuggestion> list, String name){
+
+    private void removeSuggestionByName(List<SearchSuggestion> list, String name) {
         for (Iterator<SearchSuggestion> iterator = list.iterator(); iterator.hasNext(); ) {
             SearchSuggestion value = iterator.next();
             if (value.getBody().equals(name)) {
@@ -154,12 +178,13 @@ public class MainWeatherFragment extends Fragment {
             }
         }
     }
+
     private void setUpSearchBarListeners() {
         floatingSearchView.setOnQueryChangeListener((oldQuery, newQuery) -> {
             if (!oldQuery.equals("") && newQuery.equals("")) {
                 floatingSearchView.clearSuggestions();
             }
-            if(isShowFavouritesChecked) {
+            if (isShowFavouritesChecked) {
                 floatingSearchView.swapSuggestions(getPossibleStrings(favouritesList, newQuery));
             } else {
                 floatingSearchView.swapSuggestions(getPossibleStrings(newSuggestions, newQuery));
@@ -198,7 +223,7 @@ public class MainWeatherFragment extends Fragment {
             @Override
             public void onFocus() {
                 floatingSearchView.setSearchText(lastQuery);
-                if(isShowFavouritesChecked) {
+                if (isShowFavouritesChecked) {
                     floatingSearchView.swapSuggestions(getPossibleStrings(favouritesList, lastQuery));
                 } else {
                     floatingSearchView.swapSuggestions(getPossibleStrings(newSuggestions, lastQuery));
@@ -221,7 +246,7 @@ public class MainWeatherFragment extends Fragment {
                         R.drawable.star_empty, null));
             }
             leftIcon.setOnClickListener(v -> {
-                if(isElementInList(favouritesList, item.getBody())){
+                if (isElementInList(favouritesList, item.getBody())) {
                     removeSuggestionByName(favouritesList, item.getBody());
                     leftIcon.setImageDrawable(ResourcesCompat.getDrawable(getResources(),
                             R.drawable.star_empty, null));
@@ -242,6 +267,7 @@ public class MainWeatherFragment extends Fragment {
             item.setChecked(isShowFavouritesChecked);
         });
     }
+
     private void hideKeyboard() {
         View view = this.getActivity().getCurrentFocus();
         if (view != null) {
@@ -249,6 +275,7 @@ public class MainWeatherFragment extends Fragment {
             imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
         }
     }
+
     @SuppressLint("ParcelCreator")
     private static class Suggestions implements SearchSuggestion {
         private String name;
@@ -336,7 +363,7 @@ public class MainWeatherFragment extends Fragment {
         EventBus.getDefault().post(new ApiRespondedEvent(forecasts, units));
     }
 
-    private class APICaller {
+    class APICaller {
         private OkHttpClient client;
         private Request todayWeatherRequest;
         private Request weatherForecastRequest;
@@ -362,7 +389,12 @@ public class MainWeatherFragment extends Fragment {
                     todayWeatherResponse = client.newCall(todayWeatherRequest).execute();
 
                 } catch (IOException e) {
-                    e.printStackTrace();
+                    //e.printStackTrace();
+                    getActivity().runOnUiThread(new Runnable() {
+                        public void run() {
+                            Toast.makeText(appContext, "Error: NO INTERNET CONNECTION", Toast.LENGTH_SHORT).show();
+                        }
+                    });
                 }
                 return null;
             }
@@ -382,7 +414,6 @@ public class MainWeatherFragment extends Fragment {
                         }
                         tinydb.putListString("suggestionList", suggestions);
                         Toast.makeText(getContext(), "Invalid location", Toast.LENGTH_SHORT).show();
-
                     }
 
                 } else {
@@ -401,7 +432,7 @@ public class MainWeatherFragment extends Fragment {
                     weatherForecastResponse = client.newCall(weatherForecastRequest).execute();
                     responseBody = weatherForecastResponse.body().string();
                 } catch (IOException e) {
-                    e.printStackTrace();
+                    //e.printStackTrace();
                 }
                 return null;
             }
