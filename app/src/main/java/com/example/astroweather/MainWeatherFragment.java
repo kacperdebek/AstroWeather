@@ -70,6 +70,7 @@ public class MainWeatherFragment extends Fragment {
     ArrayList<SearchSuggestion> favouritesList;
     TinyDB tinydb;
     String lastQuery = "";
+    String lastEntered = "";
     public String currentCity;
     boolean isShowFavouritesChecked = false;
 
@@ -107,6 +108,7 @@ public class MainWeatherFragment extends Fragment {
         favouritesList = new ArrayList<>();
         ArrayList<String> suggestionList = tinydb.getListString("suggestionList");
         ArrayList<String> favourites = tinydb.getListString("favouritesList");
+        lastEntered = tinydb.getString("lastEntered");
         isShowFavouritesChecked = false;
 
         for (String queries : suggestionList) {
@@ -117,7 +119,7 @@ public class MainWeatherFragment extends Fragment {
         }
         refreshIcon.setOnClickListener(v -> {
             try {
-                apiCaller.callApi(currentCity, units);
+                apiCaller.callApi(lastEntered, units);
                 if (isNetworkConnected()) {
                     Toast.makeText(activity, "Data refreshed", Toast.LENGTH_SHORT).show();
                 }
@@ -156,13 +158,9 @@ public class MainWeatherFragment extends Fragment {
     @Override
     public void onResume() {
         String todayWeather = apiCaller.mReadJsonData("today.json");
-        System.out.println("i am called");
         try {
-            currentCity = Normalizer
-                    .normalize(new JSONObject(todayWeather).getString("name"), Normalizer.Form.NFD)
-                    .replaceAll("[^\\p{ASCII}]", "");
             if (isNetworkConnected()) {
-                apiCaller.callApi(currentCity, units);
+                apiCaller.callApi(lastEntered, units);
             } else {
                 apiCaller.extractForecastJsonAndPassTheData(apiCaller.mReadJsonData("forecast.json"));
                 apiCaller.extractWeatherJsonAndPassTheData(todayWeather);
@@ -231,6 +229,8 @@ public class MainWeatherFragment extends Fragment {
                     }
                     tinydb.putListString("suggestionList", suggestions);
                 }
+                lastEntered = currentQuery;
+                tinydb.putString("lastEntered", lastEntered);
                 try {
                     apiCaller.callApi(currentQuery, units);
                 } catch (Exception e) {
@@ -409,11 +409,7 @@ public class MainWeatherFragment extends Fragment {
 
                 } catch (IOException e) {
                     e.printStackTrace();
-                    getActivity().runOnUiThread(new Runnable() {
-                        public void run() {
-                            Toast.makeText(appContext, "Error: NO INTERNET CONNECTION", Toast.LENGTH_SHORT).show();
-                        }
-                    });
+                    getActivity().runOnUiThread(() -> Toast.makeText(appContext, "Error: NO INTERNET CONNECTION", Toast.LENGTH_SHORT).show());
                 }
                 return null;
             }
