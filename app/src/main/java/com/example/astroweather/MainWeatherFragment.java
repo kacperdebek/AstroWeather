@@ -59,6 +59,7 @@ public class MainWeatherFragment extends Fragment {
     TextView pressure;
     TextView temperature;
     ImageView imageView;
+    ImageView refreshIcon;
     String units;
     MainActivity activity;
     FloatingSearchView floatingSearchView;
@@ -79,6 +80,7 @@ public class MainWeatherFragment extends Fragment {
         pressure = view.findViewById(R.id.pressure);
         temperature = view.findViewById(R.id.temperature);
         imageView = view.findViewById(R.id.weatherIcon);
+        refreshIcon = view.findViewById(R.id.refreshIcon);
 
         tinydb = new TinyDB(getContext());
         apiCaller = new APICaller(getActivity().getApplicationContext());
@@ -107,6 +109,16 @@ public class MainWeatherFragment extends Fragment {
         for (String queries : favourites) {
             favouritesList.add(new Suggestions(queries));
         }
+        refreshIcon.setOnClickListener(v -> {
+            try {
+                apiCaller.callApi(currentCity, units);
+                if (isNetworkConnected()) {
+                    Toast.makeText(activity, "Data refreshed", Toast.LENGTH_SHORT).show();
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        });
 
         setUpSearchBarListeners();
         return view;
