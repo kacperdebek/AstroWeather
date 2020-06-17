@@ -3,6 +3,7 @@ package com.example.astroweather;
 import android.annotation.SuppressLint;
 import android.app.Instrumentation;
 import android.content.Context;
+import android.graphics.Color;
 import android.net.ConnectivityManager;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -60,6 +61,8 @@ public class MainWeatherFragment extends Fragment {
     TextView temperature;
     ImageView imageView;
     ImageView refreshIcon;
+    TextView cityName;
+    TextView noInternet;
     String units;
     MainActivity activity;
     FloatingSearchView floatingSearchView;
@@ -81,6 +84,8 @@ public class MainWeatherFragment extends Fragment {
         temperature = view.findViewById(R.id.temperature);
         imageView = view.findViewById(R.id.weatherIcon);
         refreshIcon = view.findViewById(R.id.refreshIcon);
+        cityName = view.findViewById(R.id.cityName);
+        noInternet = view.findViewById(R.id.noInternet);
 
         tinydb = new TinyDB(getContext());
         apiCaller = new APICaller(getActivity().getApplicationContext());
@@ -96,6 +101,7 @@ public class MainWeatherFragment extends Fragment {
             }
         }
         determineUsedUnits();
+        noInternet.setTextColor(Color.RED);
         floatingSearchView = view.findViewById(R.id.floating_search_view);
         newSuggestions = new ArrayList<>();
         favouritesList = new ArrayList<>();
@@ -151,11 +157,11 @@ public class MainWeatherFragment extends Fragment {
     public void onResume() {
         String todayWeather = apiCaller.mReadJsonData("today.json");
         try {
-            currentCity = new JSONObject(todayWeather).getString("name");
+            currentCity = Normalizer
+                    .normalize(new JSONObject(todayWeather).getString("name"), Normalizer.Form.NFD)
+                    .replaceAll("[^\\p{ASCII}]", "");
             if (isNetworkConnected()) {
-                apiCaller.callApi(Normalizer
-                        .normalize(currentCity, Normalizer.Form.NFD)
-                        .replaceAll("[^\\p{ASCII}]", ""), units);
+                apiCaller.callApi(currentCity, units);
             } else {
                 apiCaller.extractForecastJsonAndPassTheData(apiCaller.mReadJsonData("forecast.json"));
                 apiCaller.extractWeatherJsonAndPassTheData(todayWeather);
@@ -415,7 +421,7 @@ public class MainWeatherFragment extends Fragment {
             protected void onPostExecute(Void param) {
                 if (todayWeatherResponse != null) {
                     try {
-                        String responseBody = todayWeatherResponse.body().string();
+                        String responseBody = todayWeatherResponse.peekBody(Long.MAX_VALUE).string();
                         extractWeatherJsonAndPassTheData(responseBody);
                     } catch (IOException | JSONException e) {
                         e.printStackTrace();
@@ -442,7 +448,7 @@ public class MainWeatherFragment extends Fragment {
             protected Void doInBackground(String... strings) {
                 try {
                     weatherForecastResponse = client.newCall(weatherForecastRequest).execute();
-                    responseBody = weatherForecastResponse.body().string();
+                    responseBody = weatherForecastResponse.peekBody(Long.MAX_VALUE).string();
                 } catch (IOException e) {
                     //e.printStackTrace();
                 }
@@ -454,7 +460,7 @@ public class MainWeatherFragment extends Fragment {
                 if (weatherForecastResponse != null) {
                     try {
                         extractForecastJsonAndPassTheData(responseBody);
-                    } catch (JSONException | IOException e) {
+                    } catch (JSONException e) {
                         e.printStackTrace();
                     }
                 }
@@ -462,43 +468,57 @@ public class MainWeatherFragment extends Fragment {
             }
         }
 
-        private void extractForecastJsonAndPassTheData(String responseBody) throws JSONException, IOException {
-            JSONObject forecastResponse = new JSONObject(responseBody);
-            JSONArray forecastList = forecastResponse.getJSONArray("list");
-            Map<Integer, ArrayList<String>> forecasts = new HashMap<>();
-            for (int i = 0, j = 0; i < forecastList.length(); i++) {
-                if (i % 8 == 0) {
-                    ArrayList<String> details = new ArrayList<>();
-                    details.add(forecastList.getJSONObject(i).getJSONObject("main").getString("temp"));
-                    details.add(forecastList.getJSONObject(i).getJSONArray("weather").getJSONObject(0).getString("icon"));
-                    details.add(forecastList.getJSONObject(i).getString("dt"));
-                    forecasts.put(j++, details);
+        private void extractForecastJsonAndPassTheData(String responseBody) throws JSONException {
+            try {
+                JSONObject forecastResponse = new JSONObject(responseBody);
+                JSONArray forecastList = forecastResponse.getJSONArray("list");
+                Map<Integer, ArrayList<String>> forecasts = new HashMap<>();
+                for (int i = 0, j = 0; i < forecastList.length(); i++) {
+                    if (i % 8 == 0) {
+                        ArrayList<String> details = new ArrayList<>();
+                        details.add(forecastList.getJSONObject(i).getJSONObject("main").getString("temp"));
+                        details.add(forecastList.getJSONObject(i).getJSONArray("weather").getJSONObject(0).getString("icon"));
+                        details.add(forecastList.getJSONObject(i).getString("dt"));
+                        forecasts.put(j++, details);
+                    }
                 }
+                mCreateAndSaveFile("forecast.json", responseBody);
+                sendForecast(forecasts, generateTemperatureSymbol(units));
+            } catch (Exception e) {
+                System.out.println("something went wrong");
             }
-            mCreateAndSaveFile("forecast.json", responseBody);
-            sendForecast(forecasts, generateTemperatureSymbol(units));
         }
 
         @SuppressLint("SetTextI18n")
         private void extractWeatherJsonAndPassTheData(String responseBody) throws JSONException {
-            JSONObject todayResponse = new JSONObject(responseBody);
-            JSONArray weatherArray = todayResponse.getJSONArray("weather");
-            JSONObject detailsObject = todayResponse.getJSONObject("main");
-            JSONObject windObject = todayResponse.getJSONObject("wind");
-            int vis = -1;
             try {
-                vis = todayResponse.getInt("visibility");
-            } catch (JSONException jse) {
-                System.out.println("No value for visibility");
+                JSONObject todayResponse = new JSONObject(responseBody);
+                JSONArray weatherArray = todayResponse.getJSONArray("weather");
+                JSONObject detailsObject = todayResponse.getJSONObject("main");
+                JSONObject windObject = todayResponse.getJSONObject("wind");
+                int vis = -1;
+                try {
+                    vis = todayResponse.getInt("visibility");
+                } catch (JSONException jse) {
+                    System.out.println("No value for visibility");
+                }
+                cityName.setText(todayResponse.getString("name"));
+                if (isNetworkConnected()) {
+                    noInternet.setText("");
+                } else {
+                    noInternet.setText("No internet connection available\nInformation may be outdated");
+                }
+
+                Picasso.get().load("http://openweathermap.org/img/wn/" + weatherArray.getJSONObject(0).getString("icon") + "@2x.png").into(imageView);
+
+                weather.setText("Weather: " + weatherArray.getJSONObject(0).getString("description"));
+                pressure.setText("Pressure: " + detailsObject.getString("pressure") + " hPa");
+                temperature.setText("Temperature: " + detailsObject.getString("temp") + generateTemperatureSymbol(units));
+                mCreateAndSaveFile("today.json", responseBody);
+                sendMessage(windObject.getString("deg"), windObject.getString("speed"), detailsObject.getString("humidity"), Integer.toString(vis));
+            } catch (Exception e) {
+                System.out.println("something went wrong");
             }
-
-            Picasso.get().load("http://openweathermap.org/img/wn/" + weatherArray.getJSONObject(0).getString("icon") + "@2x.png").into(imageView);
-
-            weather.setText("Weather: " + weatherArray.getJSONObject(0).getString("description"));
-            pressure.setText("Pressure: " + detailsObject.getString("pressure") + " hPa");
-            temperature.setText("Temperature: " + detailsObject.getString("temp") + generateTemperatureSymbol(units));
-            mCreateAndSaveFile("today.json", responseBody);
-            sendMessage(windObject.getString("deg"), windObject.getString("speed"), detailsObject.getString("humidity"), Integer.toString(vis));
         }
 
         private Request createRequest(String cityName, String requestType, String units) {
