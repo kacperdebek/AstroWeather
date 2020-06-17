@@ -40,6 +40,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -104,6 +105,7 @@ public class MainWeatherFragment extends Fragment {
         for (String queries : favourites) {
             favouritesList.add(new Suggestions(queries));
         }
+
         setUpSearchBarListeners();
 
         return view;
@@ -150,7 +152,14 @@ public class MainWeatherFragment extends Fragment {
                 break;
         }
     }
-
+    private void removeSuggestionByName(List<SearchSuggestion> list, String name){
+        for (Iterator<SearchSuggestion> iterator = list.iterator(); iterator.hasNext(); ) {
+            SearchSuggestion value = iterator.next();
+            if (value.getBody().equals(name)) {
+                iterator.remove();
+            }
+        }
+    }
     private void setUpSearchBarListeners() {
         floatingSearchView.setOnQueryChangeListener((oldQuery, newQuery) -> {
             if (!oldQuery.equals("") && newQuery.equals("")) {
@@ -219,7 +228,7 @@ public class MainWeatherFragment extends Fragment {
             }
             leftIcon.setOnClickListener(v -> {
                 if(isElementInList(favouritesList, item.getBody())){
-                    favouritesList.remove(item);
+                    removeSuggestionByName(favouritesList, item.getBody());
                     leftIcon.setImageDrawable(ResourcesCompat.getDrawable(getResources(),
                             R.drawable.star_empty, null));
                 } else {
@@ -291,7 +300,6 @@ public class MainWeatherFragment extends Fragment {
         //weather forecast
         JSONObject forecastJson = new JSONObject(apiCaller.mReadJsonData("forecast.json"));
         JSONArray forecastList = forecastJson.getJSONArray("list");
-        Map<Integer, ArrayList<String>> forecasts = new HashMap<>();
         for (int i = 0, j = 0; i < forecastList.length(); i++) {
             if (i % 8 == 0) {
                 float temperature = Float.parseFloat(forecastList.getJSONObject(i).getJSONObject("main").getString("temp"));
@@ -372,8 +380,13 @@ public class MainWeatherFragment extends Fragment {
                         String responseBody = todayWeatherResponse.body().string();
                         extractWeatherJsonAndPassTheData(responseBody);
                     } catch (IOException | JSONException e) {
-                        //e.printStackTrace();
-                        newSuggestions.remove(newSuggestions.size() - 1);
+                        e.printStackTrace();
+                        newSuggestions.remove(newSuggestions.size() - 1); //TODO: for some reason it still gets added (after reset??)
+                        ArrayList<String> suggestions = new ArrayList<>();
+                        for (SearchSuggestion s : newSuggestions) {
+                            suggestions.add(s.getBody());
+                        }
+                        tinydb.putListString("suggestionList", suggestions);
                         Toast.makeText(getContext(), "Invalid location", Toast.LENGTH_SHORT).show();
 
                     }
@@ -419,7 +432,6 @@ public class MainWeatherFragment extends Fragment {
             for (int i = 0, j = 0; i < forecastList.length(); i++) {
                 if (i % 8 == 0) {
                     ArrayList<String> details = new ArrayList<>();
-                    //float temperature = Float.parseFloat(forecastList.getJSONObject(i).getJSONObject("main").getString("temp"));
                     details.add(forecastList.getJSONObject(i).getJSONObject("main").getString("temp"));
                     details.add(forecastList.getJSONObject(i).getJSONArray("weather").getJSONObject(0).getString("icon"));
                     details.add(forecastList.getJSONObject(i).getString("dt"));
@@ -436,7 +448,12 @@ public class MainWeatherFragment extends Fragment {
             JSONArray weatherArray = todayResponse.getJSONArray("weather");
             JSONObject detailsObject = todayResponse.getJSONObject("main");
             JSONObject windObject = todayResponse.getJSONObject("wind");
-            int vis = todayResponse.getInt("visibility");
+            int vis = -1;
+            try {
+                vis = todayResponse.getInt("visibility");
+            } catch (JSONException jse) {
+                System.out.println("No value for visibility");
+            }
 
             Picasso.get().load("http://openweathermap.org/img/wn/" + weatherArray.getJSONObject(0).getString("icon") + "@2x.png").into(imageView);
 
