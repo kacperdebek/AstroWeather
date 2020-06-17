@@ -156,6 +156,7 @@ public class MainWeatherFragment extends Fragment {
     @Override
     public void onResume() {
         String todayWeather = apiCaller.mReadJsonData("today.json");
+        System.out.println("i am called");
         try {
             currentCity = Normalizer
                     .normalize(new JSONObject(todayWeather).getString("name"), Normalizer.Form.NFD)
@@ -407,7 +408,7 @@ public class MainWeatherFragment extends Fragment {
                     todayWeatherResponse = client.newCall(todayWeatherRequest).execute();
 
                 } catch (IOException e) {
-                    //e.printStackTrace();
+                    e.printStackTrace();
                     getActivity().runOnUiThread(new Runnable() {
                         public void run() {
                             Toast.makeText(appContext, "Error: NO INTERNET CONNECTION", Toast.LENGTH_SHORT).show();
@@ -450,7 +451,7 @@ public class MainWeatherFragment extends Fragment {
                     weatherForecastResponse = client.newCall(weatherForecastRequest).execute();
                     responseBody = weatherForecastResponse.peekBody(Long.MAX_VALUE).string();
                 } catch (IOException e) {
-                    //e.printStackTrace();
+                    e.printStackTrace();
                 }
                 return null;
             }
@@ -486,6 +487,7 @@ public class MainWeatherFragment extends Fragment {
                 sendForecast(forecasts, generateTemperatureSymbol(units));
             } catch (Exception e) {
                 System.out.println("something went wrong");
+                e.printStackTrace();
             }
         }
 
@@ -518,6 +520,7 @@ public class MainWeatherFragment extends Fragment {
                 sendMessage(windObject.getString("deg"), windObject.getString("speed"), detailsObject.getString("humidity"), Integer.toString(vis));
             } catch (Exception e) {
                 System.out.println("something went wrong");
+                e.printStackTrace();
             }
         }
 
